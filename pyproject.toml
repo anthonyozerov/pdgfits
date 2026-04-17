@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pdgfits"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "jax",
+    "iminuit",
+    "scipy",
+    "numpy",
+    "pandas",
+    "psycopg2-binary",
+    "python-dotenv",
+]
+
+[project.scripts]
+pdgfits = "pdgfits.run_fits:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
