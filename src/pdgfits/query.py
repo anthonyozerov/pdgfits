@@ -19,18 +19,18 @@ def all_fits():
     SELECT * FROM fit_control1
     """
     # suppress pandas sqlalchemy warning
-    warnings.filterwarnings('ignore', category=UserWarning, 
+    warnings.filterwarnings('ignore', category=UserWarning,
                        message='.*pandas only supports SQLAlchemy.*')
     fits_df = pd.read_sql_query(QUERY, conn)
     return fits_df
 
-def query_db(fit_label, verbose=True):
+def fit_queries(fit_label, verbose=True):
     conn = make_conn()
 
     # suppress pandas sqlalchemy warning
-    warnings.filterwarnings('ignore', category=UserWarning, 
+    warnings.filterwarnings('ignore', category=UserWarning,
                        message='.*pandas only supports SQLAlchemy.*')
-    
+
     QUERY = """
     SELECT algorithm, measurement_type, data_count FROM fit_control1 WHERE label = %s
     """
@@ -131,6 +131,58 @@ def query_db(fit_label, verbose=True):
     fit_seed_df = pd.read_sql_query(QUERY, conn, params=(fit_label,))
 
     return algorithm, measurement_type, fit_df, rel_df, meas_df, corr_df, fit_seed_df, tree_df
+
+def avg_queries(verbose=True):
+    conn = make_conn()
+
+    # suppress pandas sqlalchemy warning
+    warnings.filterwarnings('ignore', category=UserWarning,
+                       message='.*pandas only supports SQLAlchemy.*')
+
+    QUERY = """
+    select *
+    --select count(*)
+    --select count(distinct node)
+    --select m.node
+    from (
+        select m.node, m.reference_id, m.occurrence, m.measurement as measurement, u.power_of_ten, u.text, r.source_year, m.systematic_error_clump, im.node as ignore_minus, count(*) over (partition by m.node) as node_count
+        from measurement m
+        left join average_control ac on m.node=ac.node
+        LEFT JOIN units u ON m.node = u.node
+        LEFT JOIN reference r ON m.reference_id = r.reference_id
+        LEFT JOIN ignore_minus im ON m.node = im.node
+        where ac.suppress_computation is null and ac.suppress_average is null
+        and m.place = 'U'
+        and m.publication_status is null
+        and m.confidence_level is null
+        and measurement not like '*%'
+        and measurement not like '%<%'
+        and measurement not like '%>%'
+        and measurement not like 'seen'
+        and measurement not like '~%'
+        and u.summary_year is null
+    ) filtered
+    where node_count > 1
+    """
+    avg_df = pd.read_sql_query(QUERY, conn)
+
+    nodes = list(avg_df['node'].unique())
+
+    # get the correlation coefficients between the measurements
+    QUERY = f"""
+    SELECT c.node_one, c.reference_id_one, c.occurrence_one, c.node_two, c.reference_id_two, c.occurrence_two, c.correlation
+    FROM correlation c
+    WHERE c.node_one IN ('{'\', \''.join(nodes)}') AND c.node_two=c.node_one
+    AND c.publication_status IS NULL
+    """
+    if verbose:
+        print(QUERY)
+    corr_df = pd.read_sql_query(QUERY, conn)
+    print(f"Correlation df has {len(corr_df)} entries")
+    # group by node_one and make a dict from the node to the sub-dataframe of correlations for that node
+
+    corr_df_dict = {node: corr_df[corr_df['node_one'] == node] for node in nodes}
+
 
 def nuisance_corr(nuisance_params, verbose=True):
     nuisance_params = [p.removeprefix('nuisance_') for p in nuisance_params]

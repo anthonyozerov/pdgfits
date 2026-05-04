@@ -6,7 +6,7 @@ jax.config.update("jax_enable_x64", True)
 
 from pdgfits.fit_query import all_fits
 from pdgfits.fit import run_fit
-from pdgfits.diagnostics import compare_to_pdg, meas_diagnostics
+from pdgfits.diagnostics import compare_to_pdg, meas_diagnostics, meas_sensitivity
 from pdgfits.asym_errors import calc_asym_errors
 
 
@@ -19,6 +19,7 @@ def main():
     parser.add_argument('--compare_to_pdg', action='store_true', default=False)
     parser.add_argument('--calc_asym_errors', action='store_true', default=False)
     parser.add_argument('--meas_diagnostics', action='store_true', default=False)
+    parser.add_argument('--meas_sensitivity', action='store_true', default=False)
     parser.add_argument('--optimizer', type=str, default='minuit', choices=['minuit', 'scipy'])
     parser.add_argument('--fit_space', type=str, default='unconstrained', choices=['unconstrained', 'constrained'])
     args = parser.parse_args()
@@ -65,6 +66,9 @@ def main():
 
         if args.meas_diagnostics:
             meas_diagnostics(fit)
+
+        if args.meas_sensitivity:
+            meas_sensitivity(fit)
 
 
 if __name__ == '__main__':

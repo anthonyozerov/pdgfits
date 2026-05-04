@@ -55,7 +55,7 @@ def parse_measurement(s):
     def quad(errs: list[float]) -> float:
         return np.sqrt(sum(e**2 for e in errs)) if errs else 0.0
     
-    last_err = scale*(pos_errors[-1] + neg_errors[-1]) / 2
+    last_err = scale*(pos_errors[-1] + neg_errors[-1]) / 2 if pos_errors and neg_errors else 0.0
 
     # return all values scaled by the magnitude
     return (value * scale, quad(pos_errors) * scale, quad(neg_errors) * scale, last_err)

@@ -1,6 +1,5 @@
 import numpy as np
 import jax
-jax.config.update("jax_enable_x64", True)
 from jax import numpy as jnp
 import warnings
 from iminuit import Minuit
@@ -98,7 +97,7 @@ def run_fit(label, verbose=True, optimizer='minuit', fit_space='unconstrained'):
         fixed_idx = None
         decay_param_idxs = None
 
-    chi2, chi2_grad, chi2_val = build_chi2(
+    chi2, chi2_grad, chi2_val, chi2_open = build_chi2(
         y, mu, error_n, error_p, corr_mat_inv, fitted_params_to_params,
         translate_dep=translate_dep, adjust=adjust
     )
@@ -180,6 +179,8 @@ def run_fit(label, verbose=True, optimizer='minuit', fit_space='unconstrained'):
         m.migrad()
         m.simplex()
         m.migrad()
+        m.simplex()
+        m.migrad()
         m.hesse()
 
         if fixed_idx is not None:
@@ -187,9 +188,9 @@ def run_fit(label, verbose=True, optimizer='minuit', fit_space='unconstrained'):
             m.hesse()
 
         chi2_min = float(m.fval)
-        fitted_values = jnp.array(m.values)
+        fitted_values = jnp.array(m.values, dtype=jnp.float64)
         param_values = fitted_params_to_params(fitted_values)
-        covariance = jnp.array(m.covariance)
+        covariance = jnp.array(m.covariance, dtype=jnp.float64)
         fit_valid = m.valid
         hesse_accurate = m.accurate
 
@@ -205,6 +206,7 @@ def run_fit(label, verbose=True, optimizer='minuit', fit_space='unconstrained'):
         'fitted_values': fitted_values,
         'chi2_min': chi2_min,
         'chi2': chi2,
+        'chi2_open': chi2_open,
         'chi2_grad': chi2_grad,
         'fitted_params_to_params': fitted_params_to_params,
         'params_to_fitted_params': params_to_fitted_params,
