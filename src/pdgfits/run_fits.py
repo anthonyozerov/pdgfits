@@ -4,7 +4,7 @@ from decimal import Decimal
 import jax
 jax.config.update("jax_enable_x64", True)
 
-from pdgfits.fit_query import all_fits
+from pdgfits.query import all_fits
 from pdgfits.fit import run_fit
 from pdgfits.diagnostics import compare_to_pdg, meas_diagnostics, meas_sensitivity
 from pdgfits.asym_errors import calc_asym_errors

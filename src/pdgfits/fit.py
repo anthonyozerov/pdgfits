@@ -5,7 +5,7 @@ import warnings
 from iminuit import Minuit
 from scipy.optimize import minimize as scipy_minimize, Bounds, LinearConstraint
 
-from pdgfits.fit_query import query_db
+from pdgfits.query import fit_queries
 from pdgfits.preprocess import preprocess
 from pdgfits.build_funcs import get_node_funcs, get_parameter_funcs, get_meas_funcs, get_mu, get_translate_dep, get_adjust
 from pdgfits.func_factory import ALLOWED_EQUATION_TYPES
@@ -29,7 +29,7 @@ def run_fit(label, verbose=True, optimizer='minuit', fit_space='unconstrained'):
         meas_df, rel_df, fit_df, mu,
         covariance
     """
-    algorithm, measurement_type, fit_df, rel_df, meas_df, corr_df, fit_seed_df, tree_df = query_db(label, verbose=False)
+    algorithm, measurement_type, fit_df, rel_df, meas_df, corr_df, fit_seed_df, tree_df = fit_queries(label, verbose=False)
 
     if verbose:
         print(f'algorithm: {algorithm}')

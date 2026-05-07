@@ -4,6 +4,53 @@ from decimal import Decimal
 from scipy.optimize import NonlinearConstraint, minimize
 
 
+def binary_search_error(profile_chi2, val, chi2_min, err_scale, lb, ub):
+    """
+    Find 1-sigma asymmetric errors by binary search on a profile chi-squared.
+
+    profile_chi2: callable(scalar) -> chi2 profiled over all other parameters
+    val: optimal value of the target quantity
+    chi2_min: minimum chi2 at the optimum
+    err_scale: scale for convergence tolerance (search stops when bracket < 1e-3 * err_scale)
+    lb: initial lower bound (lb < val); expanded outward if chi2 doesn't reach chi2_min+1
+    ub: initial upper bound (ub > val); expanded outward if chi2 doesn't reach chi2_min+1
+
+    Returns (upper_err, lower_err).
+    """
+    target = chi2_min + 1
+    chi2 = jnp.inf
+
+    while profile_chi2(ub) < target:
+        ub = val + 2 * (ub - val)
+    lo, hi = val, ub
+    while jnp.abs(chi2-target)>0.005:
+        mid = (lo + hi) / 2
+        chi2 = profile_chi2(mid)
+        if chi2 < target:
+            lo = mid
+        else:
+            hi = mid
+    assert jnp.abs(chi2 - target) < 0.1, f'Expected chi2 ~ {target}, got {chi2} at mid={mid}, lo={lo}, hi={hi}'
+
+    upper_err = float(hi - val)
+
+    chi2 = jnp.inf
+    while profile_chi2(lb) < target:
+        lb = val - 2 * (val - lb)
+    lo, hi = lb, val
+    while jnp.abs(chi2-target)>0.005:
+        mid = (lo + hi) / 2
+        chi2 = profile_chi2(mid)
+        if chi2 < target:
+            hi = mid
+        else:
+            lo = mid
+    assert jnp.abs(chi2 - target) < 0.1, f'Expected chi2 ~ {target}, got {chi2} at mid={mid}, lo={lo}, hi={hi}'
+    lower_err = float(val - lo)
+
+    return upper_err, lower_err
+
+
 def calc_asym_errors(fit, targets=None):
     """
     Calculate asymmetric errors via binary search for a subset of nodes or parameters.
@@ -38,7 +85,7 @@ def calc_asym_errors(fit, targets=None):
             print(f'Warning: {target} not found in nodes or parameters, skipping.')
             continue
 
-        target_value = target_func(param_values)
+        target_value = float(target_func(param_values))
         J_target = jax.jacobian(target_func)(param_values)
         target_std = float(jnp.sqrt(J_target @ param_cov @ J_target.T))
 
@@ -50,32 +97,17 @@ def calc_asym_errors(fit, targets=None):
 
         constraint = make_constraint(target_func)
 
-        def chi2_at_val(val):
-            c = NonlinearConstraint(constraint, lb=val, ub=val)
-            return minimize(fun=chi2, x0=fitted_values, jac=chi2_grad, constraints=[c])
-
-        lb = target_value
-        ub = target_value + 10 * target_std
-        while (ub - lb) / target_std > 1e-3:
-            mid = (lb + ub) / 2
-            res = chi2_at_val(mid)
+        def profile_chi2(v):
+            c = NonlinearConstraint(constraint, lb=v, ub=v)
+            res = minimize(fun=chi2, x0=fitted_values, jac=chi2_grad, constraints=[c])
             assert res.success
-            if res.fun < chi2_min + 1:
-                lb = mid
-            else:
-                ub = mid
-        upper_err = float(ub - target_value)
+            return float(res.fun)
 
         lb = target_value - 10 * target_std
-        ub = target_value
-        while (ub - lb) / target_std > 1e-3:
-            mid = (lb + ub) / 2
-            res = chi2_at_val(mid)
-            if res.fun < chi2_min + 1:
-                ub = mid
-            else:
-                lb = mid
-        lower_err = float(target_value - lb)
+        ub = target_value + 10 * target_std
 
-        target_value = float(target_value)
+        upper_err, lower_err = binary_search_error(
+            profile_chi2, target_value, chi2_min, target_std, lb, ub
+        )
+
         print(f'{target}: {Decimal(target_value):.5E} + {Decimal(upper_err):.2E} - {Decimal(lower_err):.2E}')

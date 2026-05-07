@@ -141,11 +141,8 @@ def avg_queries(verbose=True):
 
     QUERY = """
     select *
-    --select count(*)
-    --select count(distinct node)
-    --select m.node
     from (
-        select m.node, m.reference_id, m.occurrence, m.measurement as measurement, u.power_of_ten, u.text, r.source_year, m.systematic_error_clump, im.node as ignore_minus, count(*) over (partition by m.node) as node_count
+        select m.node, m.reference_id, m.occurrence, m.measurement as measurement, u.power_of_ten, u.text, r.source_year, m.systematic_error_clump, m.systematic_error_clump2, im.node as ignore_minus, count(*) over (partition by m.node) as node_count
         from measurement m
         left join average_control ac on m.node=ac.node
         LEFT JOIN units u ON m.node = u.node
@@ -158,8 +155,10 @@ def avg_queries(verbose=True):
         and measurement not like '*%'
         and measurement not like '%<%'
         and measurement not like '%>%'
-        and measurement not like 'seen'
+        and measurement not like '%seen'
         and measurement not like '~%'
+        and measurement like '%+%'
+        and ltrim(measurement) not like '@%'
         and u.summary_year is null
     ) filtered
     where node_count > 1
@@ -178,10 +177,12 @@ def avg_queries(verbose=True):
     if verbose:
         print(QUERY)
     corr_df = pd.read_sql_query(QUERY, conn)
-    print(f"Correlation df has {len(corr_df)} entries")
-    # group by node_one and make a dict from the node to the sub-dataframe of correlations for that node
+    if verbose:
+        print(f"Correlation df has {len(corr_df)} entries")
 
     corr_df_dict = {node: corr_df[corr_df['node_one'] == node] for node in nodes}
+
+    return avg_df, corr_df_dict
 
 
 def nuisance_corr(nuisance_params, verbose=True):
@@ -191,6 +192,7 @@ def nuisance_corr(nuisance_params, verbose=True):
     SELECT par_code_row, parameter_row, par_code_column, parameter_column, coefficient
     FROM fit_correlation_matrix
     WHERE concat_ws('.', par_code_row, parameter_row) IN ('{'\', \''.join(nuisance_params)}') AND concat_ws('.', par_code_column, parameter_column) IN ('{'\', \''.join(nuisance_params)}')
+    AND type NOT LIKE 'DR'
     """
     if verbose:
         print(QUERY)
@@ -214,6 +216,7 @@ def pdg_value(node):
     WHERE ({par_code_cond}) AND parameter = %s
     AND summary_year IS NULL
     AND POSITION('~' IN summary) = 0 -- no tilde in summary
+    AND type NOT LIKE 'DR'
     """
     # suppress pandas sqlalchemy warning
     warnings.filterwarnings('ignore', category=UserWarning, 

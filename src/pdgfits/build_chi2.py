@@ -3,7 +3,7 @@ import jax.numpy as jnp
 import jax
 
 
-def build_chi2(y, mu, error_n, error_p, corr_mat_inv, fitted_params_to_params, translate_dep=None, adjust=None):
+def build_chi2(y, mu, error_n, error_p, corr_mat_inv, fitted_params_to_params, translate_dep=None, adjust=None, use_jit=True):
     if translate_dep is None:
         translate_dep = lambda x: 0
     if adjust is None:
@@ -19,7 +19,9 @@ def build_chi2(y, mu, error_n, error_p, corr_mat_inv, fitted_params_to_params, t
         error_between = (prod_e2 - resid_ua * diff_e) / sum_e
         return jnp.clip(error_between, error_min, error_max) * adjustment
 
-    @jax.jit
+    maybe_jit = jax.jit if use_jit else (lambda f: f)
+
+    @maybe_jit
     def chi2_open(fitted_params, y_arg):
         params = fitted_params_to_params(fitted_params)
         adjustment = adjust(params)
@@ -28,11 +30,11 @@ def build_chi2(y, mu, error_n, error_p, corr_mat_inv, fitted_params_to_params, t
         normed_resid = resid / error
         return normed_resid @ corr_mat_inv @ normed_resid
 
-    @jax.jit
+    @maybe_jit
     def chi2(fitted_params):
         return chi2_open(fitted_params, y)
 
-    chi2_grad_jax = jax.jit(jax.grad(chi2))
+    chi2_grad_jax = (jax.jit if use_jit else (lambda f: f))(jax.grad(chi2))
     def chi2_grad(fitted_params):
         return np.asarray(chi2_grad_jax(fitted_params))
     def chi2_val(fitted_params):

@@ -29,13 +29,13 @@ def parse_measurement(s):
     # Regex for one token: (sign-chars)[optional space](unsigned number)
     #   sign-chars: one of  +  |  -  |  +-  |  -+
     #   unsigned number: digits with optional decimal point
-    token_re = re.compile(r"([+-]{1,2})\s*(\d+(?:\.\d+)?)")
+    token_re = re.compile(r"([+-](?:\s*[+-])?)\s*(\d+(?:\.\d+)?)")
 
     # Central value: everything before the first token_re match that
     # does NOT start at position 0.
     first = token_re.search(s, pos=1)
     if first:
-        value = float(s[: first.start()])
+        value = float(s[: first.start()].strip())
         rest = s[first.start() :]
     else:
         value = float(s)

@@ -5,7 +5,7 @@ ALLOWED_EQUATION_TYPES = ['+', 'G+', 'R+', 'lifetime', '/', 'P', 'G*', 'P/', 'SR
 
 # coeff_params indexes into [1, param0, param1, ...]: index 0 means multiply by 1 (no param coefficient),
 # otherwise multiply by the referenced parameter.
-def func_factory(equation_type, coefficients, coeff_params):
+def func_factory(equation_type, coefficients, coeff_params, jit=True):
     coefficients = jnp.array(coefficients, dtype=jnp.float64)
     coeff_params = jnp.array(coeff_params)
     simple = not bool(jnp.any(coeff_params))  # static: True when no parameter-valued coefficients
@@ -19,7 +19,9 @@ def func_factory(equation_type, coefficients, coeff_params):
             coeff_mult = jnp.where(coeff_params[i] > 0, params[param_idxs[i]], 1.0)
             return jnp.dot(params, coefficients[i] * coeff_mult)
 
-    @jax.jit
+    maybe_jit = jax.jit if jit else (lambda f: f)
+
+    @maybe_jit
     def f(params):
         if equation_type == '+':
             return t(params, 0)

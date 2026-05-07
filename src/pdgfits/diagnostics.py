@@ -2,7 +2,7 @@ import numpy as np
 import jax
 from jax import numpy as jnp
 
-from pdgfits.fit_query import all_fits, pdg_most_precise_value
+from pdgfits.query import all_fits, pdg_most_precise_value
 
 
 def get_pdg_chi2(label):

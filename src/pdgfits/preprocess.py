@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from itertools import permutations, combinations
 from pdgfits.parser import parse_measurement, br_adjust_node, get_scale, parameter_key, get_dep_meas_data, get_adjust_data, measurement_string
-from pdgfits.fit_query import pdg_most_precise_value, nuisance_corr
+from pdgfits.query import pdg_most_precise_value, nuisance_corr
 from collections import defaultdict
 
 # function to parse measurement strings
@@ -12,7 +12,6 @@ from collections import defaultdict
 # then we parse the rest of the measurement string into a value and errors
 def unadjust_measurement(measurement):
     if 'br_adjust' in measurement:
-        # print(measurement)
         measurement = measurement.removeprefix('br_adjust:').strip()
         original_measurement = measurement.split(';')[0].strip()
         meas, error_p, error_n, last_err = parse_measurement(original_measurement)
@@ -31,15 +30,16 @@ def unadjust_measurement(measurement):
             # print(adjust_meas_str.split(',')[1].strip())
             adjust_meas, adjust_error_p, adjust_error_n, _ = parse_measurement(adjust_meas_str.split(',')[1].strip())
             # print(adjust_meas, adjust_error_p, adjust_error_n)
+
             if rel == '/':
                 meas_new = meas * adjust_meas
                 error_p_new = meas_new * np.sqrt(max(error_p**2/meas**2 - adjust_error_n**2/adjust_meas**2, 0))
                 error_n_new = meas_new * np.sqrt(max(error_n**2/meas**2 - adjust_error_p**2/adjust_meas**2, 0))
             elif rel == '*':
-                
                 meas_new = meas / adjust_meas
                 error_p_new = meas_new * np.sqrt(max(error_p**2/meas**2 - adjust_error_p**2/adjust_meas**2, 0))
                 error_n_new = meas_new * np.sqrt(max(error_n**2/meas**2 - adjust_error_n**2/adjust_meas**2, 0))
+
             meas = meas_new
             error_p = error_p_new
             error_n = error_n_new
@@ -132,7 +132,7 @@ def preprocess(fit_df, rel_df, meas_df, corr_df, fit_seed_df, tree_df, algorithm
     # standardize the units of the measurements (e.g. multiply measurements of eV by 10^{-6} to get MeV)
     # (this is needed for e.g. partial widths that sum up to a total width)
     # TODO: this is maybe incomplete
-    print('units:', list(meas_df['text'].unique()))
+    # print('units:', list(meas_df['text'].unique()))
 
     meas_df['scale'] = meas_df.apply(lambda row: get_scale(row['text']), axis=1)
     meas_df['value'] *= meas_df['scale']
@@ -225,10 +225,18 @@ def preprocess(fit_df, rel_df, meas_df, corr_df, fit_seed_df, tree_df, algorithm
     coeff_nodes_not_in_fit = [node for node in coeff_nodes if node not in parameters+nodes]
     if len(coeff_nodes_not_in_fit) > 0:
         print('coeff nodes not in fit:', coeff_nodes_not_in_fit)
+
+    dep_meas_nodes = list(itertools.chain.from_iterable([data[0] for data in dep_meas_data if data is not None]))
+    dep_meas_nodes = list(np.unique(dep_meas_nodes))
+    if len(dep_meas_nodes) > 0:
+        print('dep_meas nodes:', dep_meas_nodes)
+    dep_meas_nodes_not_in_fit = [node for node in dep_meas_nodes if node not in parameters+nodes]
+    if len(dep_meas_nodes_not_in_fit) > 0:
+        print('dep_meas nodes not in fit:', dep_meas_nodes_not_in_fit)
     nuisance_params = []
 
     # add nuisance parameters for any nodes that are not in the fit
-    for node in set(adjust_nodes_not_in_fit + coeff_nodes_not_in_fit):
+    for node in set(adjust_nodes_not_in_fit + coeff_nodes_not_in_fit + dep_meas_nodes_not_in_fit):
         nuisance_node = f'nuisance_{node}'
         nuisance_params.append(nuisance_node)
         print('adding nuisance parameter:', nuisance_node)
