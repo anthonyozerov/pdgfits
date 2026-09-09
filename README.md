@@ -41,3 +41,18 @@ The profile solver retains projected starts, SLSQP, exact-Hessian fallback, KKT 
 `tools/check_snapshot.py OUTPUT.jsonl` captures all 81 snapshot fits, difficult profile targets, four SciPy cases, every nuisance-bearing average and a spread of direct averages. Run it in separate processes with `PYTHONPATH` set to the old and new package sources for a numerical refactor comparison. `tools/compare_snapshot.py BEFORE.jsonl AFTER.jsonl` checks their agreement.
 
 Retained June experiments and raw results are under `notes/` and `outputs/`. They describe their original code revisions and sampling assumptions. The independent remote history through `3691d0e` was imported as squash commit `bf3d97c`; the untouched nested source remains ignored. The subsequent simplification and its validation are documented in `notes/simplification-20260908.md`.
+
+## Experimental node scales
+
+For a **linear, unconstrained Gaussian model with fixed symmetric errors**,
+`birge.fit_linear_scales(y, X, V, nodes)` estimates a separate inflation factor
+for each node using restricted maximum likelihood. It refits the mean as the
+scales change and preserves the supplied correlations through `D_s V D_s`.
+A single ordinary average recovers the clipped Birge ratio.
+
+This is an opt-in reference calculation. It does not modify `run_fit` or
+`run_avg`, implement the legacy weak-input rule, or establish coverage for the
+asymmetric objective. Returned covariance is conditional on the estimated scales.
+See [the node-scale note](notes/node-scales.md) for the exact assumptions and
+remaining work. The companion `birge.linear_birge` returns residual diagnostics
+and their variance-mixing matrix for independent nodes or correlated blocks.
