@@ -1,0 +1,83 @@
+{
+  "cases": 369,
+  "max_scaled_differences": {
+    "chi2": 3.6637359812630166e-15,
+    "values": 8.546085892794696e-12,
+    "node_values": 8.097664081278787e-12,
+    "covariance": 4.851186511113133e-05,
+    "profile_errors": 3.5159488238886486e-08,
+    "average_errors": 0
+  },
+  "failures": [
+    {
+      "case": "fit:eta^'(958)",
+      "field": "covariance",
+      "relative_error": 1.5209964548570838e-06
+    },
+    {
+      "case": "fit:phi(1020)",
+      "field": "covariance",
+      "relative_error": 1.0651464933384396e-05
+    },
+    {
+      "case": "fit:f_2(1270)",
+      "field": "covariance",
+      "relative_error": 4.672945596361158e-06
+    },
+    {
+      "case": "fit:f_1(1285)",
+      "field": "covariance",
+      "relative_error": 4.851186511113133e-05
+    },
+    {
+      "case": "fit:K_2^*(1430)",
+      "field": "covariance",
+      "relative_error": 2.7806351810912414e-05
+    },
+    {
+      "case": "fit:f_2^'(1525)",
+      "field": "covariance",
+      "relative_error": 4.401918624686146e-05
+    },
+    {
+      "case": "fit:pi_2(1670)",
+      "field": "covariance",
+      "relative_error": 2.635886681808812e-06
+    },
+    {
+      "case": "fit:D^*(2010)+",
+      "field": "covariance",
+      "relative_error": 2.3538570567496936e-05
+    },
+    {
+      "case": "fit:K^*(1680)",
+      "field": "covariance",
+      "relative_error": 1.5793319984052304e-06
+    },
+    {
+      "case": "fit:f_0(1510)",
+      "field": "covariance",
+      "relative_error": 7.3784327309797565e-06
+    },
+    {
+      "case": "fit:Sigma+",
+      "field": "covariance",
+      "relative_error": 4.3700567805829164e-06
+    },
+    {
+      "case": "fit:omega(782)",
+      "field": "covariance",
+      "relative_error": 3.2275469776926695e-05
+    },
+    {
+      "case": "fit:D_s1",
+      "field": "covariance",
+      "relative_error": 3.794150694843073e-05
+    },
+    {
+      "case": "fit:eta",
+      "field": "covariance",
+      "relative_error": 1.7644723831670056e-06
+    }
+  ]
+}

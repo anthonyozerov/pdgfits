@@ -4,60 +4,14 @@ import jax.numpy as jnp
 from pdgfits.func_factory import func_factory
 
 def get_node_funcs(nodes, parameters, fit_df, rel_df, jit=True):
-    # dict node -> equation_type
-    equation_type_dict = dict(zip(fit_df['node'], fit_df['type']))
+    """Compile each relationship once, using the same builder as predictions."""
+    equations = dict(zip(fit_df['node'], fit_df['type']))
+    return [_build_node_func(node, parameters, equations, rel_df, jit) for node in nodes]
 
-    # form the list of functions which maps parameters -> node values
-    # uses the relationship table
-    node_funcs = []
-    for node in nodes:
-
-        # the rows of the table which specify how the node is determined
-        rel_df_sub = rel_df[rel_df['node'] == node]
-
-        # the type of the equation which determines the node
-        equation_type = equation_type_dict[node]
-
-        n_summations = np.max(rel_df_sub['summation'])
-
-        # form a list of coefficients for each summation
-        # (parameters not in the summation get a coefficient of 0)
-        # and a list of coefficient parameter indices (this will be mostly be a list of arrays ofzeros)
-        coefficients = []
-        coeff_params = []
-        for i in range(n_summations):
-            # coefficients and coefficient parameter indicesfor the ith summation
-            coefficients_i = np.zeros(len(parameters), dtype=np.float64)
-            coeff_params_i = np.zeros(len(parameters), dtype=np.int32)
-
-            # for each of the parameters, if it is in the ith summation, put in its coefficient
-            for j, param in enumerate(parameters):
-                # if the parameter has an entry with summation i+i, then put it in
-                entry = rel_df_sub[(rel_df_sub['parameter_key'] == param) & (rel_df_sub['summation'] == (i+1))]
-                if len(entry) > 0:
-                    coefficients_i[j] = entry['coefficient'].iloc[0]
-                    # if there are coefficient parameters, put in their indices (offset by 1 for the trick
-                    # in the term() function in func_factory.py)
-                    if any(~entry['coeff_parameter_key'].isna()):
-                        coeff_parameter_key = entry['coeff_parameter_key'].iloc[0]
-                        if coeff_parameter_key not in parameters:
-                            coeff_parameter_key = f'nuisance_{coeff_parameter_key}'
-                        assert coeff_parameter_key in parameters, f"Coefficient parameter {coeff_parameter_key} for node {node} not found in parameters {parameters}"
-                        coeff_params_i[j] = list(parameters).index(coeff_parameter_key)+1
-            coefficients.append(coefficients_i)
-            coeff_params.append(coeff_params_i)
-
-        # create the function using the equation type, coefficients, and coefficient parameter indices
-        node_funcs.append(func_factory(equation_type, coefficients, coeff_params, jit=jit))
-
-    return node_funcs
 
 def get_parameter_funcs(parameters):
-    # parameter funcs just select one element from the params array
-    parameter_funcs = []
-    for i in range(len(parameters)):
-        parameter_funcs.append(lambda params, i=i: params[i])
-    return parameter_funcs
+    return [lambda params, i=i: params[i] for i in range(len(parameters))]
+
 
 def get_meas_funcs(node_func_dict, parameter_func_dict, meas_df):
     # list of functions which map parameters to the value of each measurement's measurand
@@ -149,7 +103,7 @@ def _build_node_func(node, parameters, eq_type_map, rel_df, jit=True):
     coefficients = []
     coeff_params_list = []
     for s in range(1, n_summations + 1):
-        sub = rel_sub[rel_sub['summation'] == s]
+        sub = rel_sub[rel_sub['summation'] == s].drop_duplicates('parameter_key', keep='first')
         coeff_vec = np.zeros(n_params, dtype=np.float64)
         cp_vec = np.zeros(n_params, dtype=np.int32)
         for _, row in sub.iterrows():

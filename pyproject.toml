@@ -18,7 +18,18 @@ dependencies = [
 
 [project.scripts]
 pdgfits = "pdgfits.run_fits:main"
+pdgfits-averages = "pdgfits.run_avgs:main"
 pdgfits-snapshot = "pdgfits.snapshot:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+pdgfits = ["avg-node-ex.yaml"]
+
+[project.optional-dependencies]
+test = ["pytest"]
+plots = ["matplotlib", "pyyaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

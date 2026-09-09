@@ -1,0 +1,21 @@
+{
+  "baseline_commit": "bf3d97c",
+  "capture_sha256": {
+    "before.jsonl": "9427623d753677903ecc8680b4a35f19c2d45301e2c1e0c64ace1b73bffe7a1f",
+    "final.jsonl": "5c05d4b7916c78fd2708fedbf3900a4ba74152e81017e223cf42c3c799a44c8e"
+  },
+  "profile_targets": 17,
+  "versions": {
+    "numpy": "2.4.3",
+    "scipy": "1.17.1",
+    "jax": "0.9.2",
+    "jaxlib": "0.9.2",
+    "iminuit": "2.32.0",
+    "pandas": "3.0.1",
+    "pytest": "9.0.3"
+  },
+  "python_lines": {
+    "before": 4112,
+    "after": 3569
+  }
+}

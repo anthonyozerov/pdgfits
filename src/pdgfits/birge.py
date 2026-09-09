@@ -4,8 +4,12 @@ import jax
 
 def block_birge(y, corr_inv, error, theta, chi2, mu, hess, blocks):
     """
-    Per-block chi^2 and its expectation under correctly-stated errors.
-    Birge ratio for block b is sqrt(chi2_b / exp_chi2_b).
+    Experimental block residual/leverage diagnostic.
+
+    The expected residual formula is justified for linear Gaussian least
+    squares with fixed covariance. With the observed Hessian of a nonlinear
+    asymmetric objective, this is only a local diagnostic and can be negative.
+    It must not automatically rescale reported confidence intervals.
     """
     # W = D^{-1} corr_inv D^{-1}
     W = corr_inv * jnp.outer(1/error, 1/error) # (n, n)

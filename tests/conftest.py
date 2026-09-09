@@ -20,7 +20,7 @@ def pytest_collection_modifyitems(config, items):
 def pytest_generate_tests(metafunc):
     if "fit_label" in metafunc.fixturenames:
         if metafunc.config.getoption("--db"):
-            from pdgfits.fit_query import all_fits
+            from pdgfits.query import all_fits
             fits_df = all_fits()
             labels = [
                 row["label"]

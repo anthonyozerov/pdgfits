@@ -95,189 +95,83 @@ def _large_coordinate_scale_info(parameters, param_init, skip_idxs=None):
     return np.array(scale_idxs, dtype=int), np.array(scales, dtype=np.float64)
 
 
-def _run_unconstrained_scipy(scipy_obj, scipy_value, scipy_hessp, x0):
-    """Trust-region solve with a simplex escape, returning the best attempt."""
-    start_fun = scipy_value(x0)
-    best = OptimizeResult(
-        x=np.array(x0, dtype=np.float64),
-        fun=start_fun,
-        success=False,
-        message='initial point (all scipy attempts failed)',
-    )
+def _finite_scipy_result(result):
+    return (result is not None and np.isfinite(getattr(result, 'fun', np.inf))
+            and np.all(np.isfinite(result.x)))
 
-    def is_finite_result(result):
-        return (
-            result is not None
-            and hasattr(result, 'fun')
-            and np.isfinite(result.fun)
-            and np.all(np.isfinite(result.x))
-        )
 
-    def update_best(result):
-        nonlocal best
-        if not is_finite_result(result):
-            return
-
-        tied = result.fun <= best.fun + max(1e-8, 1e-10 * abs(best.fun))
-        better = result.fun < best.fun
-        better_status = tied and bool(result.success) and not bool(best.success)
-        if better or better_status:
-            best = result
-
-    def run_trust(start):
-        try:
-            return scipy_minimize(
-                scipy_obj,
-                start,
-                method='trust-ncg',
-                jac=True,
-                hessp=scipy_hessp,
-                options={'maxiter': 1000},
-            )
-        except (FloatingPointError, ValueError, np.linalg.LinAlgError) as exc:
-            return OptimizeResult(
-                x=np.array(start, dtype=np.float64),
-                fun=np.inf,
-                success=False,
-                message=f'trust-ncg failed: {exc}',
-            )
-
-    trust = run_trust(x0)
-    update_best(trust)
-
-    trust_stalled = (
-        not is_finite_result(trust)
-        or (not trust.success)
-        or trust.fun >= start_fun - 1e-8
-    )
-    if trust_stalled:
-        bfgs_start = best.x if np.isfinite(best.fun) else x0
-        bfgs = scipy_minimize(
-            scipy_obj,
-            bfgs_start,
-            method='BFGS',
-            jac=True,
-            options={'maxiter': max(1000, 1000 * len(x0))},
-        )
-        update_best(bfgs)
-        if is_finite_result(bfgs):
-            update_best(run_trust(bfgs.x))
-
-    if trust_stalled and not best.success:
-        nm_start = best.x if np.isfinite(best.fun) else x0
-        nm = scipy_minimize(
-            scipy_value,
-            nm_start,
-            method='Nelder-Mead',
-            options={
-                'adaptive': True,
-                'maxiter': max(1000, 100 * len(x0)),
-                'xatol': 1e-5,
-                'fatol': 1e-5,
-            },
-        )
-        update_best(nm)
-        if is_finite_result(nm):
-            update_best(run_trust(nm.x))
-
+def _best_attempt(best, candidate):
+    """Prefer a lower objective, or a successful numerically tied attempt."""
+    if _finite_scipy_result(candidate):
+        tied = candidate.fun <= best.fun + max(1e-8, 1e-10 * abs(best.fun))
+        if candidate.fun < best.fun or (tied and candidate.success and not best.success):
+            return candidate
     return best
 
 
-def _finite_scipy_result(result):
-    return (
-        result is not None
-        and hasattr(result, 'fun')
-        and hasattr(result, 'x')
-        and np.isfinite(result.fun)
-        and np.all(np.isfinite(result.x))
-    )
+def _scipy_attempt(objective, start, method, **kwargs):
+    try:
+        return scipy_minimize(objective, start, method=method, **kwargs)
+    except (FloatingPointError, ValueError, np.linalg.LinAlgError) as exc:
+        return OptimizeResult(x=np.asarray(start), fun=np.inf, success=False,
+                              message=f'{method} failed: {exc}')
 
 
-def _run_constrained_scipy(scipy_obj, scipy_value, scipy_hessp, x0,
-                           bounds, constraints):
-    """Constrained solve from the supplied seed, returning the best attempt."""
-    finite_starts = []
-    start = np.array(x0, dtype=np.float64)
-    if np.all(np.isfinite(start)):
-        finite_starts.append(start)
+def _run_unconstrained_scipy(scipy_obj, scipy_value, scipy_hessp, x0):
+    """Trust region, then BFGS and a simplex escape only when needed."""
+    start_fun = scipy_value(x0)
+    best = OptimizeResult(x=np.array(x0), fun=start_fun, success=False,
+                          message='initial point (all scipy attempts failed)')
 
-    if len(finite_starts) == 0:
-        return OptimizeResult(
-            x=np.array(x0, dtype=np.float64),
-            fun=np.inf,
-            success=False,
-            message='no finite constrained scipy start',
-        )
+    def trust(start):
+        return _scipy_attempt(scipy_obj, start, 'trust-ncg', jac=True,
+                              hessp=scipy_hessp, options={'maxiter': 1000})
 
-    start_fun = scipy_value(finite_starts[0])
-    best = OptimizeResult(
-        x=finite_starts[0].copy(),
-        fun=start_fun,
-        success=False,
-        message='initial point (all constrained scipy attempts failed)',
-    )
+    first = trust(x0)
+    best = _best_attempt(best, first)
+    stalled = not _finite_scipy_result(first) or not first.success or first.fun >= start_fun - 1e-8
+    if stalled:
+        bfgs = scipy_minimize(scipy_obj, best.x if np.isfinite(best.fun) else x0,
+                              method='BFGS', jac=True,
+                              options={'maxiter': max(1000, 1000 * len(x0))})
+        best = _best_attempt(best, bfgs)
+        if _finite_scipy_result(bfgs):
+            best = _best_attempt(best, trust(bfgs.x))
+    if stalled and not best.success:
+        simplex = scipy_minimize(scipy_value, best.x if np.isfinite(best.fun) else x0,
+                                 method='Nelder-Mead', options={
+                                     'adaptive': True, 'maxiter': max(1000, 100 * len(x0)),
+                                     'xatol': 1e-5, 'fatol': 1e-5})
+        best = _best_attempt(best, simplex)
+        if _finite_scipy_result(simplex):
+            best = _best_attempt(best, trust(simplex.x))
+    return best
 
-    def update_best(result):
-        nonlocal best
-        if not _finite_scipy_result(result):
-            return
 
-        tied = result.fun <= best.fun + max(1e-8, 1e-10 * abs(best.fun))
-        better = result.fun < best.fun
-        better_status = tied and bool(result.success) and not bool(best.success)
-        if better or better_status:
-            best = result
+def _run_constrained_scipy(scipy_obj, scipy_value, scipy_hessp, x0, bounds, constraints):
+    """Compare SLSQP and exact-Hessian trust region from the supplied seed."""
+    x0 = np.asarray(x0, dtype=np.float64)
+    best = OptimizeResult(x=x0.copy(), fun=np.inf, success=False,
+                          message='no finite constrained scipy start')
+    if not np.isfinite(x0).all():
+        return best
+    best.fun = scipy_value(x0)
+    best.message = 'initial point (all constrained scipy attempts failed)'
 
-    def run_slsqp(start):
-        try:
-            return scipy_minimize(
-                scipy_obj,
-                start,
-                method='SLSQP',
-                jac=True,
-                bounds=bounds,
-                constraints=constraints,
-                options={'maxiter': 1000, 'ftol': 1e-10},
-            )
-        except (FloatingPointError, ValueError, np.linalg.LinAlgError) as exc:
-            return OptimizeResult(
-                x=np.array(start, dtype=np.float64),
-                fun=np.inf,
-                success=False,
-                message=f'SLSQP failed: {exc}',
-            )
+    def trust(start):
+        return _scipy_attempt(scipy_obj, start, 'trust-constr', jac=True,
+                              hessp=scipy_hessp, bounds=bounds, constraints=constraints,
+                              options={'maxiter': 1000})
 
-    def run_trust_constr(start):
-        try:
-            return scipy_minimize(
-                scipy_obj,
-                start,
-                method='trust-constr',
-                jac=True,
-                hessp=scipy_hessp,
-                bounds=bounds,
-                constraints=constraints,
-                options={'maxiter': 1000},
-            )
-        except (FloatingPointError, TypeError, ValueError, np.linalg.LinAlgError) as exc:
-            return OptimizeResult(
-                x=np.array(start, dtype=np.float64),
-                fun=np.inf,
-                success=False,
-                message=f'trust-constr failed: {exc}',
-            )
-
-    for start in finite_starts:
-        result = run_slsqp(start)
-        update_best(result)
-        trust_result = run_trust_constr(start)
-        update_best(trust_result)
-        if _finite_scipy_result(result) and not result.success:
-            update_best(run_trust_constr(result.x))
-
+    slsqp = _scipy_attempt(scipy_obj, x0, 'SLSQP', jac=True,
+                           bounds=bounds, constraints=constraints,
+                           options={'maxiter': 1000, 'ftol': 1e-10})
+    best = _best_attempt(best, slsqp)
+    best = _best_attempt(best, trust(x0))
+    if _finite_scipy_result(slsqp) and not slsqp.success:
+        best = _best_attempt(best, trust(slsqp.x))
     if not best.success:
-        update_best(run_trust_constr(best.x))
-
+        best = _best_attempt(best, trust(best.x))
     return best
 
 
@@ -290,12 +184,9 @@ def _run_minuit_candidate(chi2_val, chi2_grad, x0, constrained, decay_param_idxs
         for i in decay_param_idxs:
             m.limits[int(i)] = (0, 1)
 
-    m.migrad()
-    m.simplex()
-    m.migrad()
-    m.simplex()
-    m.migrad()
-    m.simplex()
+    for _ in range(3):
+        m.migrad()
+        m.simplex()
     m.migrad()
     m.hesse()
 
@@ -322,6 +213,10 @@ def run_fit(label, verbose=True, optimizer='minuit', fit_space='unconstrained'):
         meas_df, rel_df, fit_df,
         covariance, fit_valid, hesse_accurate
     """
+    if optimizer not in ('minuit', 'scipy'):
+        raise ValueError(f'Unknown optimizer: {optimizer}')
+    if fit_space not in ('unconstrained', 'constrained'):
+        raise ValueError(f'Unknown fit space: {fit_space}')
     algorithm, measurement_type, fit_df, rel_df, meas_df, corr_df, fit_seed_df, tree_df = fit_queries(label, verbose=False)
 
     if verbose:

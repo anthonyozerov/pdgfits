@@ -7,11 +7,48 @@ import pytest
 
 from pdgfits.asym_errors import (
     CallableProfileProblem,
+    ProfilePoint,
+    build_coordinate_profile_chi2,
     binary_search_error,
     build_constrained_profile_chi2,
     find_profile_root,
 )
 from pdgfits.avg import run_avg
+
+
+def test_root_rejects_failed_profile_even_when_objective_is_finite():
+    class FailedProfile:
+        def evaluate(self, value):
+            return ProfilePoint(value, value**2, False, 0.0, "not minimized")
+
+    with pytest.raises(RuntimeError, match="Unsuccessful profile"):
+        find_profile_root(FailedProfile(), 0, 0, -2, 2, contract_brackets=False)
+
+
+def test_root_honors_requested_residual_tolerance():
+    # A jump across the requested objective level cannot supply an endpoint.
+    def profile(value):
+        return 0.996 if abs(value) < 1 else 1.004
+
+    with pytest.raises(RuntimeError, match="endpoint verification failed"):
+        find_profile_root(profile, 0, 0, -2, 2, residual_tol=0.001)
+
+
+def test_coordinate_profile_does_not_certify_an_unoptimized_start(monkeypatch):
+    from scipy.optimize import OptimizeResult
+    import pdgfits.profiles as profiles
+
+    def failed_minimize(fun, x, **kwargs):
+        value = fun(x)
+        return OptimizeResult(x=x, fun=value[0] if isinstance(value, tuple) else value,
+                              success=False, message="no progress")
+
+    monkeypatch.setattr(profiles, "minimize", failed_minimize)
+    profile = build_coordinate_profile_chi2(
+        lambda x: x[0]**2 + (x[1]-x[0])**2, np.array([0., 0.]), 0
+    )
+    with pytest.raises(RuntimeError, match="Profile minimization failed"):
+        profile(1.0)
 
 
 def test_binary_search_reuses_last_endpoint_evaluation():

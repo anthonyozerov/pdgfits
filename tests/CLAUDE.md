@@ -15,7 +15,7 @@ pytest tests/ -m db --db -n 4  # parallel (requires pytest-xdist)
 
 ## Files
 
-- **`conftest.py`** — adds the `--db` CLI flag; registers the `db` marker; skips `db`-marked tests when `--db` is absent; uses `pytest_generate_tests` to lazily parametrize `fit_label` from `fit_query.all_fits()` only when `--db` is active (filters out `algorithm='IGNORE'` and the `tauhflav` label).
+- **`conftest.py`** — adds the `--db` CLI flag; registers the `db` marker; skips `db`-marked tests when `--db` is absent; uses `pytest_generate_tests` to lazily parametrize `fit_label` from `query.all_fits()` only when `--db` is active (filters out `algorithm='IGNORE'` and the `tauhflav` label).
 - **`test_integration.py`** — single `@pytest.mark.db` test parametrized over all fit labels. For each label it calls `run_fit(label, optimizer='minuit', fit_space='unconstrained')` and asserts:
   1. `result['fit_valid']` — Minuit reports a valid fit
   2. `result['hesse_accurate']` — Hesse covariance succeeded

@@ -1,0 +1,13 @@
+{
+  "cases": 369,
+  "covariance_tolerance": 0.0001,
+  "max_scaled_differences": {
+    "chi2": 3.6637359812630166e-15,
+    "values": 8.546085892794696e-12,
+    "node_values": 8.097664081278787e-12,
+    "covariance": 4.851186511113133e-05,
+    "profile_errors": 3.5159488238886486e-08,
+    "average_errors": 0
+  },
+  "failures": []
+}
