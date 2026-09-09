@@ -5,7 +5,9 @@ objective. They improve how the same problem is represented and solved.
 
 * Profile parameters use uncertainty units. Shared compiled derivatives avoid
   recompilation for each target; the endpoint search uses the approximately
-  quadratic shape of Q to take bracketed square-root secant steps.
+  quadratic shape of Q to take bracketed square-root secant steps. If successive
+  steps stop contracting, it bisects the bracket. This prevents steep endpoints
+  from exhausting the search while preserving the fast quadratic case.
 * Branching-fraction fits use an affine physical chart for profiling and repeated
   fits. Exact zero, one and sum constraints are accessible. An interval reaching
   a physical boundary is returned with an explicit boundary flag.
@@ -29,8 +31,8 @@ or frequentist coverage.
 ## Measured performance
 
 Against commit `51e2184`, 45 matched, successfully completed fit groups, each with
-all its profile targets, take **1,214.08 seconds before and 101.16 seconds after**,
-including the central fits: **12.00 times faster**. Failed or timed-out baseline
+all its profile targets, take **1,214.08 seconds before and 68.65 seconds after**,
+including the central fits: **17.69 times faster**. Failed or timed-out baseline
 groups are excluded from the speed ratio. All 81 supported snapshot fits and all
 1,395 targets complete with the new solver.
 
@@ -38,7 +40,8 @@ All 2,647 averages complete. Recorded complete runs take 50–72 seconds, versus
 197.94 seconds before. This is a smaller gain; there is no uniform tenfold speed
 claim for every call. Timings use one BLAS thread, the same offline snapshot and
 this machine's PDG Python environment. Concurrent validation jobs affect elapsed
-time. General simulation-based node scaling is new work and has no corresponding
+time. The fit/profile timings exclude the benchmark's intervening cache clearing
+and output serialization. General simulation-based node scaling is new work and has no corresponding
 baseline speed ratio.
 
 For the large χc/ψ simulation batch, handing the remaining difficult cases to
@@ -51,6 +54,11 @@ minima and both new endpoints. All 2,647 pass; 824 asymmetric scalar cases also
 pass a finer search. The maximum endpoint Q residual is 0.004988, within the
 requested 0.005. Some shallow minima move slightly as they are solved more
 accurately; agreement with an old approximate answer is not the acceptance rule.
+The final 369-case snapshot comparison leaves all central values, objective
+minima, node predictions and covariances identical. Some average endpoints move
+within the requested objective tolerance (largest error-width change 0.44%);
+their independent original-objective checks pass. Fit profile widths agree to
+6.4×10⁻¹² relative precision in this capture.
 
 ## Complete validation
 
@@ -69,8 +77,12 @@ Carlo tolerance allowance. The largest coupled eta_c/J/psi/psi(2S) case passes
 at residual 0.000993 after 1,303 scale evaluations, including all 71 profile
 targets. Its completed run takes 31.4 minutes; the median general-scale case
 takes about five seconds. The earlier 30-minute benchmark timeout is retained
-in the report with its successful retry. The fitting test suite passes 198
-tests, with two optional integration/fixture tests skipped.
+in the report with its successful retry. The final endpoint safeguard also resolves
+an eta_c(2S) profile search that stalled at a steep bracket endpoint. All scaled
+profiles are checked again at the unchanged, validated scales; the separate
+profile-check timings and original scale-run sources are retained in the report.
+The fitting test suite passes 199
+tests, with two optional database tests skipped.
 
 ## Reproduce
 

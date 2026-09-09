@@ -25,6 +25,14 @@ def test_boundary_endpoint_is_not_forced_to_cross_objective_level():
     assert abs(root.upper.residual) < .005
 
 
+def test_steep_bracket_endpoint_does_not_stall_secant_search():
+    profile = lambda x: ((x-1)/(x+.01))**2
+    root = find_profile_root(profile, 1., 0., 0., 2., limits=(0., 3.))
+    assert root.lower.endpoint == pytest.approx(.495, abs=.001)
+    assert abs(root.lower.residual) <= .005
+    assert root.upper.is_bound
+
+
 def test_root_rejects_failed_profile_even_when_objective_is_finite():
     class FailedProfile:
         def evaluate(self, value):

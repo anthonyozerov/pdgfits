@@ -260,15 +260,22 @@ def find_profile_root(
         qlo, qhi = (float(chi2_min), moving_point.chi2) if upper else (moving_point.chi2, float(chi2_min))
         mid = None
         mid_point = None
+        previous_step = np.inf
         for _ in range(max_iter):
             # sqrt(Delta Q) is linear for a quadratic profile. Interpolate in
             # that coordinate, retaining the bracket and a bisection safeguard.
             left = np.sqrt(max(qlo-float(chi2_min), 0.))
             right = np.sqrt(max(qhi-float(chi2_min), 0.))
             fraction = (1-left)/(right-left) if right != left else .5
-            if not .001 < fraction < .999:
-                fraction = .5
-            mid = lo2 + fraction*(hi2-lo2)
+            # A steep bracket endpoint can make secant steps retain almost
+            # the entire bracket indefinitely. Bisect when successive steps
+            # fail to contract, preserving fast quadratic convergence.
+            candidate = lo2 + fraction*(hi2-lo2)
+            if (not .001 < fraction < .999
+                    or (mid is not None and abs(candidate-mid) > .5*previous_step)):
+                candidate = .5*(lo2+hi2)
+            previous_step = hi2-lo2 if mid is None else abs(candidate-mid)
+            mid = candidate
             mid_point = checked_point(mid, side=side, phase="bisect")
             if mid_point.chi2 < target:
                 if upper: lo2, qlo = mid, mid_point.chi2
