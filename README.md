@@ -28,7 +28,7 @@ The default backend is the internal PostgreSQL database. It requires the PDG tun
 - `fit.py`, `avg.py`: prepare and minimize a joint fit or an average; return plain result dictionaries.
 - `profiles.py`: minimize while holding an arbitrary target, or a direct average coordinate, fixed.
 - `refit.py`, `scalar_average.py`: repeated fits with changed data or errors, and direct scalar averages.
-- `node_scales.py`, `pdg_scaling.py`: general simulation-based node scales and the current PDG scaling prescription.
+- `node_scales.py`, `pdg_scaling.py`: general local-geometry node scales and the current PDG scaling prescription.
 - `asym_errors.py`: bracket and verify profile endpoints. `find_profile_root` returns the result directly; `binary_search_error` remains a compatibility wrapper for older experiments.
 - `diagnostics.py`, `plotting.py`: comparisons, sensitivities and optional plots.
 
@@ -63,24 +63,22 @@ remaining work. The companion `birge.linear_birge` returns residual diagnostics
 and their variance-mixing matrix for independent nodes or correlated blocks.
 
 For general nonlinear/asymmetric fits, `node_scales.fit_node_scales(fit)`
-estimates each node's expected scale contribution by simulation and refitting.
-It uses an explicit sampling density proportional to the existing `exp(-Q/2)`
-kernel, preserves the measurement relationships, and applies no additional
-precision exclusion. Known full-rank correlations are retained; exactly dependent
-summaries stay on their raw measurement plane. Returned scales, expected
-contributions, Monte Carlo errors and numerical residuals make the approximation
-explicit. The resulting parameter covariance and profiles condition on those
-scales; they do not include scale-estimation uncertainty.
+calculates each node's marginal disagreement and its expectation in the local
+Gaussian tangent model. It computes scales once, then refits the original
+objective. No simulation, outer scale iteration or automatic precision cut is
+used. Correlations are retained; exactly dependent linked nodes share a scale.
+Asymmetric knots, active bounds and groups with no residual information are
+explicitly reported. These local expectations are approximate for general fits;
+conditional covariance and profiles do not include scale-estimation uncertainty.
 
 ```bash
-python -m pdgfits.run_fits --fit_label 'phi(1020)' --node-scales --scale-draws 512 --calc_asym_errors
+python -m pdgfits.run_fits --fit_label 'phi(1020)' --node-scales --calc_asym_errors
 ```
 
 The equivalent Python calls are `scaled = fit_node_scales(run_fit(label))` and
-`calc_asym_errors(scaled)`. The API also accepts prepared `run_avg` results.
-The default outer precision uses the strict finite-simulation score equations.
-Monte Carlo standard errors are reported separately from numerical residuals.
-See [general node scaling](notes/general-node-scales.md) for the model and limits.
+`calc_asym_errors(scaled)`. See [general node scaling](notes/general-node-scales.md)
+for the equations, asymmetric/boundary conventions and result fields. The older
+simulation estimator and its draw/seed options have been removed.
 
 `pdg_scaling.pdg_average` and `pdg_scaling.pdg_linear_fit` provide comparison
 baselines for the PDG prescriptions. The first includes the existing asymmetric

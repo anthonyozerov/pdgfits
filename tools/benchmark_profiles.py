@@ -56,7 +56,6 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('output', type=Path)
     parser.add_argument('--kind', choices=['fits', 'averages', 'node-scales', 'pdg-scales'], required=True)
-    parser.add_argument('--draws', type=int, default=256)
     parser.add_argument('--scale-profiles', action='store_true', help='Also check every profile target after node scaling')
     parser.add_argument('--all', action='store_true')
     parser.add_argument('--label', action='append')
@@ -131,7 +130,7 @@ def main():
                 if args.kind == 'node-scales':
                     from pdgfits.node_scales import fit_node_scales
                     def scale():
-                        result = fit_node_scales(fit, draws=args.draws, seed=81, verbose=True)
+                        result = fit_node_scales(fit, verbose=True)
                         row = {'scaling': result['node_scaling'], 'values': result['param_values'],
                                 'chi2': result['chi2_min'], 'fit_valid': result['fit_valid'],
                                 'parameters': result['parameters'], 'covariance': result['covariance'],

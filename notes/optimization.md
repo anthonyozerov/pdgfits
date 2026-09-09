@@ -1,104 +1,73 @@
 # Fitting and interval optimization, September 2026
 
-The changes preserve the measurement functions, correlations and asymmetric-error
-objective. They improve how the same problem is represented and solved.
+The current revision replaces simulation-based general node scales with a single
+local-geometry calculation and simplifies the refitting code. Measurement
+functions, the asymmetric-error objective and the ordinary profile solver are
+preserved.
 
-* Profile parameters use uncertainty units. Shared compiled derivatives avoid
-  recompilation for each target; the endpoint search uses the approximately
-  quadratic shape of Q to take bracketed square-root secant steps. If successive
-  steps stop contracting, it bisects the bracket. This prevents steep endpoints
-  from exhausting the search while preserving the fast quadratic case.
-* Branching-fraction fits use an affine physical chart for profiling and repeated
-  fits. Exact zero, one and sum constraints are accessible. An interval reaching
-  a physical boundary is returned with an explicit boundary flag.
-* Direct averages use a scalar search over the error-rule pieces, including their
-  knots. Auxiliary-parameter averages share product-model kernels and minimize
-  the residual vector. Independent measurements avoid dense whitening products.
-* Repeated simulated fits share compiled kernels and run in batches. Failed
-  stationarity checks fall back to the scalar solver. Local conditioning and
-  explicit one-sided derivative checks handle asymmetric knots; small optimizer
-  steps alone are not accepted as convergence.
-* General node scales retain the best completed score update when switching
-  solvers. Numerical derivatives use a controlled step in log scale, including
-  near the scale floor; relative steps there can be smaller than inner-fit
-  numerical error. Their score residual and Monte Carlo error are separate.
+## What was removed
 
-The profile safeguards remain: feasibility and stationarity checks, projected
-starts, curvature and descent checks, and direct verification of returned
-endpoints in the original objective. These checks do not prove global optimality
-or frequentist coverage.
+* The normalized-kernel samplers, simulated score expectations and outer scale
+  root/least-squares solvers. Scale estimation now uses the residual Jacobian
+  and a small matrix projection; see [the method](general-node-scales.md).
+* The custom batched damped-Newton optimizer for simulated fits.
+* Repeated reconditioning/polishing cycles, up to eight derivative-free recovery
+  rounds, and special callback exceptions in the mean refitter.
 
-## Measured performance
+`node_scales.py` is 131 lines rather than 419; `refit.py` is 251 rather than 408.
+Including the removed command-line options, production Python has 448 fewer
+lines. The retired Monte Carlo options and result fields are removed explicitly.
+The Gaussian linear REML reference is still a separate optional comparator.
 
-Against commit `51e2184`, 45 matched, successfully completed fit groups, each with
-all its profile targets, take **1,214.08 seconds before and 68.65 seconds after**,
-including the central fits: **17.69 times faster**. Failed or timed-out baseline
-groups are excluded from the speed ratio. All 81 supported snapshot fits and all
-1,395 targets complete with the new solver.
+## What remains and why
 
-All 2,647 averages complete. Recorded complete runs take 50–72 seconds, versus
-197.94 seconds before. This is a smaller gain; there is no uniform tenfold speed
-claim for every call. Timings use one BLAS thread, the same offline snapshot and
-this machine's PDG Python environment. Concurrent validation jobs affect elapsed
-time. The fit/profile timings exclude the benchmark's intervening cache clearing
-and output serialization. General simulation-based node scaling is new work and has no corresponding
-baseline speed ratio.
+The mean refitter uses SciPy least squares with Jacobian scaling, or SLSQP when
+physical constraints are present. If needed, it minimizes once along a nearby
+asymmetric-error knot, then uses at most one derivative-free fallback. Feasibility,
+one-sided stationarity, local descent and covariance checks remain.
 
-For the large χc/ψ simulation batch, handing the remaining difficult cases to
-the scalar solver after eight vector steps, instead of 32, takes 2.22 rather
-than 4.58 seconds in a matched check. All 256 objective values agree within
-7×10⁻¹⁰, and the same 14 cases require the safeguarded solver.
+The corner polish has a concrete regression behind it: coordinate searches can
+find no decrease even when a direction *along* the corner decreases Q. Dropping
+that polish shifted three auxiliary-input averages by less than 0.001 reported
+standard errors, but raised Q by about 2–4×10⁻⁶. A short constrained polish
+restores their previous minima within 5×10⁻¹². A two-parameter analytic example
+checks this mechanism directly. Coordinate-wise stopping alone is not accepted
+at an asymmetric corner.
 
-Independent checks reconstruct the original average objective at the old and new
-minima and both new endpoints. All 2,647 pass; 824 asymmetric scalar cases also
-pass a finer search. The maximum endpoint Q residual is 0.004988, within the
-requested 0.005. Some shallow minima move slightly as they are solved more
-accurately; agreement with an old approximate answer is not the acceptance rule.
-The final 369-case snapshot comparison leaves all central values, objective
-minima, node predictions and covariances identical. Some average endpoints move
-within the requested objective tolerance (largest error-width change 0.44%);
-their independent original-objective checks pass. Fit profile widths agree to
-6.4×10⁻¹² relative precision in this capture.
+The ordinary fixed-target profile solver is unchanged. It retains its projected
+starts, exact-Hessian fallback, KKT/descent checks, physical bounds and contracting
+endpoint bracket. Those safeguards were independently justified by difficult
+profile cases before the simulation-scale work. Shared derivatives, uncertainty
+units and direct scalar-average searches are also retained; they are simpler
+than adding more optimizer layers.
 
-## Complete validation
+## Validation and performance
 
-The [compact validation report](optimizer-validation.json) records all cases,
-endpoint residuals, scale residuals and the matched timing workload:
+The [current validation report](optimizer-validation.json) records the final
+local-scale, PDG-comparator, average and snapshot checks. The 369-case comparison
+against `e605082` includes all ordinary central fits, selected difficult profiles
+and averages with auxiliary inputs. Direct average checks reconstruct the
+original measurement objective at minima and endpoints. Passing numerical
+checks does not establish global optimality or frequentist coverage.
 
-| Calculation | Completed fits or averages | Checked profile targets |
-|---|---:|---:|
-| Ordinary fits | 81 | 1,395 |
-| General node scales | 81 | 1,395 |
-| Current PDG scale pass, both exclusion choices | 162 | 2,790 |
-| Averages, independently checked | 2,647 | primary intervals checked separately |
+The current sweep passes 81 locally scaled fits / 1,395 targets, 162 PDG scale
+variants / 2,790 targets, and all 2,647 averages (including 824 scalar refinements).
+The test suite passes 197 tests, with two optional live-database tests skipped.
+All ordinary snapshot outputs in the 369-case comparison are unchanged. One
+auxiliary average, S041B41, exceeds the comparison's strict 1e-7 relative error
+tolerance by a factor of 2.12: its interval errors change by 2.12e-7 relatively
+after recovering the same minimum to 2.1e-13 in Q. Its independently checked
+endpoint Q residuals change by less than 7e-8 and remain within 0.005. This
+reviewed numerical-equivalence warning is retained in the report.
 
-General scales use 256 draws, seed 81, numerical tolerance 0.001 and no Monte
-Carlo tolerance allowance. The largest coupled eta_c/J/psi/psi(2S) case passes
-at residual 0.000993 after 1,303 scale evaluations, including all 71 profile
-targets. Its completed run takes 31.4 minutes; the median general-scale case
-takes about five seconds. The earlier 30-minute benchmark timeout is retained
-in the report with its successful retry. The final endpoint safeguard also resolves
-an eta_c(2S) profile search that stalled at a steep bracket endpoint. All scaled
-profiles are checked again at the unchanged, validated scales; the separate
-profile-check timings and original scale-run sources are retained in the report.
-The fitting test suite passes 199
-tests, with two optional database tests skipped.
+The earlier **17.69×** result was measured at `e605082` against `51e2184` on
+45 matched successful ordinary fit/profile groups: 1,214.08 versus 68.65 seconds.
+The ordinary fit/profile source is unchanged in this simplification. This is a
+historical workload measurement, not a new claim of uniform speedup for all APIs.
+The former 31-minute scale calculation was a different statistical procedure;
+its removal is not described as accelerating an equivalent Monte Carlo estimate.
+Current local-scale timings, including their checked profiles, are in the report.
 
-## Reproduce
-
-Explicitly select `PDGFITS_DATA_BACKEND=snapshot`, `PDGFITS_SNAPSHOT_DIR`, and the
-checkout's `PYTHONPATH=src`. Use separate output files for each implementation.
-
-```bash
-python tools/benchmark_profiles.py fits.jsonl --kind fits --all
-python tools/benchmark_profiles.py averages.jsonl --kind averages --all --keep-cache
-python tools/verify_averages.py before-averages.jsonl checked-averages.json
-python tools/benchmark_profiles.py scales.jsonl --kind node-scales --all --scale-profiles --timeout 7200
-python tools/benchmark_profiles.py pdg-scales.jsonl --kind pdg-scales --all --scale-profiles --timeout 600
-python -m pytest -q
-```
-
-The node-scale benchmark fixes 256 simulation draws and seed 81. The PDG benchmark
-runs both exclusion choices. Each completed case is written immediately; a failed
-case remains visible and requires a new output file when retried. `tauhflav` and
-entries marked `IGNORE` are outside the existing supported fit sweep.
+The full older validation report and simulation implementation are available in
+Git at `e605082`; they do not describe the current node-scale method. The local
+raw development runs are under `pdgstudy/.local/geometry-audit/`.

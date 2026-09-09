@@ -38,8 +38,9 @@ is a stationarity check, not a global-optimum theorem.
 
 These scale routines remain opt-in. Do not substitute an observed Hessian or
 fitted asymmetric covariance into the exact expectation argument. The separate
-[general implementation](general-node-scales.md) makes an explicit sampling
-choice for nonlinear means, active constraints and asymmetric errors. Interval
+[general implementation](general-node-scales.md) uses a single local Gaussian tangent
+approximation for nonlinear means, active constraints and asymmetric errors;
+it does not simulate data or iterate over scale estimates. Interval
 calibration remains a further statistical question.
 
 Checks cover ordinary Birge recovery, independent nodes with different scales,
@@ -86,4 +87,5 @@ The evidence does not support replacing the existing separate-pull formula
 wholesale. Correlation modification and original-center reporting are distinct
 issues, and the simulations show regimes in which they matter substantially.
 Excluding weak inputs can help or hurt under explicitly different sampling models;
-no exclusions is retained as the simpler primary alternative for further study.
+in particular, exclusion can prevent correct weak errors from diluting the scale
+when precise errors are underestimated. Neither selection policy is universally preferred.
