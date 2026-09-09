@@ -7,9 +7,9 @@ ALLOWED_EQUATION_TYPES = ['+', 'G+', 'R+', 'lifetime', '/', 'P', 'G*', 'P/', 'SR
 # coeff_params indexes into [1, param0, param1, ...]: index 0 means multiply by 1 (no param coefficient),
 # otherwise multiply by the referenced parameter.
 def func_factory(equation_type, coefficients, coeff_params, jit=True):
-    coefficients = jnp.array(coefficients, dtype=np.float64)
-    coeff_params = jnp.array(coeff_params)
-    simple = not jnp.any(coeff_params)  # static: True when no parameter-valued coefficients
+    coefficients = np.array(coefficients, dtype=np.float64)
+    coeff_params = np.array(coeff_params)
+    simple = not np.any(coeff_params)  # static: True when no parameter-valued coefficients
 
     if simple:
         def t(params, i):
@@ -19,9 +19,9 @@ def func_factory(equation_type, coefficients, coeff_params, jit=True):
         # Split coefficient array into two static masked arrays so no jnp.where is needed
         # at trace/differentiation time. coeff_param_parts[i,j] is non-zero only where
         # element j uses a parameter multiplier; coeff_static_parts[i,j] covers the rest.
-        coeff_param_parts = jnp.array(jnp.where(has_coeff, coefficients, 0.0))
-        coeff_static_parts = jnp.array(jnp.where(~has_coeff, coefficients, 0.0))
-        param_idxs = jnp.array(jnp.maximum(coeff_params - 1, 0))
+        coeff_param_parts = jnp.array(np.where(has_coeff, coefficients, 0.0))
+        coeff_static_parts = jnp.array(np.where(~has_coeff, coefficients, 0.0))
+        param_idxs = jnp.array(np.maximum(coeff_params - 1, 0))
 
         # i is always a static Python int at every call site (0, 1, 2).
         def t(params, i):

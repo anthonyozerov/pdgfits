@@ -9,7 +9,7 @@ requires-python = ">=3.10"
 dependencies = [
     "jax",
     "iminuit",
-    "scipy",
+    "scipy>=1.14",
     "numpy",
     "pandas",
     "psycopg2-binary",

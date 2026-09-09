@@ -21,5 +21,4 @@ def get_corr_mat(meas_df, corr_df):
             meas_two_idx = meas_df_ids.index(meas_two_id)
             corr_mat[meas_one_idx, meas_two_idx] = row['correlation']
             corr_mat[meas_two_idx, meas_one_idx] = row['correlation']
-    corr_mat = jnp.array(corr_mat, dtype=jnp.float64)
     return corr_mat

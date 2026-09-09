@@ -219,3 +219,4 @@ SCIENTIFIC_CONTEXT.md
 # Local transfer source and experiment logs
 pdgfits-remote/
 notes/logs/
+.local/

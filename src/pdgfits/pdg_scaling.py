@@ -1,10 +1,10 @@
 """Reference implementations of documented PDG scale procedures.
 
-The average follows savg.f, including its asymmetric iteration. The joint-fit
-comparator covers linear means, fixed symmetric errors and nonsingular explicit
-correlation blocks. It follows sscafac.f/sbrfit.f (one scale pass, threshold
-1.001, epsilon 1e-5). Dependent singular inputs and nonlinear asymmetric fit
-error propagation are outside this comparator's scope.
+The average follows savg.f, including its asymmetric iteration. The linear
+reference follows sscafac.f/sbrfit.f with fixed symmetric errors (one scale
+pass, threshold 1.001, epsilon 1e-5). The general wrapper applies that scaling
+pass to the Python mean-fit objective; it does not port every legacy Fortran
+asymmetric-error propagation step.
 """
 
 import numpy as np
@@ -112,13 +112,28 @@ def pdg_linear_fit(values, design, covariance, nodes, exclude_weak=True, correla
     indices = np.flatnonzero(keep)
     reduced_y, reduced_x, reduced_v = y[keep], x[keep], v[np.ix_(keep, keep)]
     before, _, residual, prediction_covariance = _gls(reduced_y, reduced_x, reduced_v)
+    reduced_blocks = [np.flatnonzero(np.isin(indices, block)).tolist() for block in blocks]
+    scaled_v, node_scales, block_results = _pull_update(
+        reduced_y, reduced_v, residual, prediction_covariance, nodes[keep], block_ids[keep], reduced_blocks)
+    for row, block in zip(block_results, blocks):
+        row['indices'] = list(block)
+    final, final_covariance, final_residual, _ = _gls(reduced_y, reduced_x, scaled_v)
+    return {'parameters': original, 'covariance': final_covariance,
+            'unscaled_covariance': original_covariance, 'refitted_parameters': final,
+            'before_scaling_parameters': before, 'retained': keep,
+            'node_scales': node_scales, 'correlated_blocks': block_results,
+            'measurement_covariance': scaled_v,
+            'q_final': final_residual@np.linalg.solve(scaled_v, final_residual)}
+
+
+def _pull_update(y, v, residual, prediction_covariance, nodes, block_ids, blocks):
     node_scales = {}
-    scaled_v = reduced_v.copy()
+    scaled_v = v.copy()
     for node in dict.fromkeys(nodes):
-        selected = (nodes[keep] == node) & (block_ids[keep] < 0)
+        selected = (nodes == node) & (block_ids < 0)
         if not selected.any():
             continue
-        denominator = np.diag(reduced_v)[selected] - (1-1e-5)**2*np.diag(prediction_covariance)[selected]
+        denominator = np.diag(v)[selected] - (1-1e-5)**2*np.diag(prediction_covariance)[selected]
         pulls = residual[selected]**2/denominator
         magnitude = np.sqrt(np.sum(np.maximum(pulls, 0))/selected.sum())
         scale = magnitude if magnitude > 1.001 else 1.
@@ -127,25 +142,110 @@ def pdg_linear_fit(values, design, covariance, nodes, exclude_weak=True, correla
         scaled_v[locations, locations] *= scale**2
     block_results = []
     for block in blocks:
-        local = np.flatnonzero(np.isin(indices, block))
-        measurement_v = reduced_v[np.ix_(local, local)]
-        expected_residual_v = measurement_v - (1-1e-5)*prediction_covariance[np.ix_(local, local)]
-        correction_precision = np.linalg.inv(expected_residual_v)
+        local = np.flatnonzero(np.isin(np.arange(len(y)), block))
+        measurement_v = v[np.ix_(local, local)]
+        measurement_precision = np.linalg.pinv(measurement_v)
+        # The Fortran form also accepts exactly dependent summaries: it does
+        # not require an inverse of their singular measurement covariance.
+        correction_precision = measurement_precision@np.linalg.inv(
+            np.eye(len(local))-(1-1e-5)*prediction_covariance[np.ix_(local, local)]@measurement_precision)
+        correction_precision = (correction_precision+correction_precision.T)/2
+        square = float(residual[local]@correction_precision@residual[local])
+        if square < 0:
+            block_results.append({'indices': list(block), 'pull_magnitude': 0., 'invalid_pull': True})
+            continue
         eigenvalues, eigenvectors = np.linalg.eigh(correction_precision)
         pull = (eigenvectors*np.sqrt(np.maximum(eigenvalues, 0)))@eigenvectors.T@residual[local]
         magnitude = np.sqrt(max(0., residual[local]@correction_precision@residual[local]))
         norm = np.linalg.norm(pull)
+        errors = np.sqrt(np.diag(measurement_v))
+        dependent = np.linalg.eigvalsh(measurement_v/np.outer(errors, errors)).min() < 1e-10
         if magnitude > 1.001 and norm > 0:
-            direction = pull/norm
-            errors = np.sqrt(np.diag(measurement_v))
-            along = (direction/errors)@measurement_v@(direction/errors)
-            measurement_v = measurement_v + np.outer(direction*errors, direction*errors)*(magnitude**2-1)*along
+            if dependent:
+                # SBRFIT uses a common factor for a dependency block, retaining
+                # the exact relation between its reported summaries.
+                measurement_v = measurement_v*magnitude**2
+            else:
+                direction = pull/norm
+                along = (direction/errors)@measurement_v@(direction/errors)
+                measurement_v = measurement_v + np.outer(direction*errors, direction*errors)*(magnitude**2-1)*along
             scaled_v[np.ix_(local, local)] = measurement_v
-        block_results.append({'indices': list(block), 'pull_magnitude': magnitude})
-    final, final_covariance, final_residual, _ = _gls(reduced_y, reduced_x, scaled_v)
-    return {'parameters': original, 'covariance': final_covariance,
-            'unscaled_covariance': original_covariance, 'refitted_parameters': final,
-            'before_scaling_parameters': before, 'retained': keep,
+        block_results.append({'indices': list(block), 'pull_magnitude': magnitude, 'dependent': bool(dependent)})
+    return scaled_v, node_scales, block_results
+
+
+def pdg_fit_scales(fit, exclude_weak=True):
+    """Apply the PDG separate-pull scaling pass to a prepared general fit.
+
+    The supplied Python Q defines the nonlinear/asymmetric mean fits and their
+    local covariances. The scaling pass follows SSCAFAC/SBRFIT: select weak
+    independent inputs once, refit, compute pulls, inflate, and refit. This
+    isolates the scale prescription; it is not a port of Fortran's separate
+    asymmetric-error propagation or every upstream input-selection convention.
+
+    The result separates the original reported center from the final refit.
+    Profile the latter and attach its errors to either center for a comparison.
+    No additional precision cut is made when exclude_weak=False.
+    """
+    import jax
+    import jax.numpy as jnp
+    from pdgfits.build_chi2 import build_chi2
+    from pdgfits.refit import physical_refit_model, prepare_refit
+
+    original = fit
+    fit = physical_refit_model(fit)
+    fit = prepare_refit(fit)()
+    data = fit['meas_df']
+    nodes = data['node'].to_numpy()
+    correlation = np.asarray(fit['corr_mat'])
+    blocks = _correlated_blocks(correlation)
+    block_ids = np.full(len(data), -1, int)
+    for i, block in enumerate(blocks):
+        block_ids[block] = i
+
+    def information(current):
+        prediction = lambda fp: current['mu_adjust'](current['fitted_params_to_params'](fp))
+        fp = jnp.asarray(current['fitted_values'])
+        jacobian = np.asarray(jax.jacfwd(prediction)(fp))
+        residual = current['meas_df']['value'].to_numpy()-np.asarray(prediction(fp))
+        lower, upper = [current['meas_df'][key].to_numpy() for key in ['error_n', 'error_p']]
+        errors = np.clip((2*lower*upper-residual*(upper-lower))/(lower+upper),
+                          np.minimum(lower, upper), np.maximum(lower, upper))
+        return residual, errors, jacobian@current['covariance']@jacobian.T
+
+    def rebuild(current, retained, lower, upper, corr):
+        answer = dict(current)
+        indices = np.flatnonzero(retained)
+        prediction = lambda p: current['mu_adjust'](p)[indices]
+        measurements = current['meas_df'].iloc[indices].copy()
+        measurements['error_n'], measurements['error_p'] = lower, upper
+        q, gradient, _, opened = build_chi2(measurements['value'].to_numpy(), prediction,
+            lower, upper, np.linalg.pinv(corr), current['fitted_params_to_params'])
+        answer.update(meas_df=measurements, mu_adjust=prediction, corr_mat=corr,
+                      chi2=q, chi2_grad=gradient, chi2_open=opened)
+        answer.pop('input_scales', None)
+        return prepare_refit(answer)()
+
+    residual, errors, prediction_covariance = information(fit)
+    keep = np.ones(len(data), bool)
+    if exclude_weak:
+        for node in dict.fromkeys(nodes):
+            selected = (nodes == node) & (block_ids < 0)
+            cutoff = 3*np.sqrt(selected.sum()*np.maximum(np.diag(prediction_covariance)[selected], 0))
+            keep[selected] = errors[selected] <= cutoff
+    if not keep.all():
+        fit = rebuild(fit, keep, data['error_n'].to_numpy()[keep], data['error_p'].to_numpy()[keep],
+                      correlation[np.ix_(keep, keep)])
+        residual, errors, prediction_covariance = information(fit)
+    indices = np.flatnonzero(keep)
+    local_blocks = [np.flatnonzero(np.isin(indices, block)).tolist() for block in blocks]
+    covariance = correlation[np.ix_(keep, keep)]*np.outer(errors, errors)
+    scaled, node_scales, block_results = _pull_update(data['value'].to_numpy()[keep], covariance,
+        residual, prediction_covariance, nodes[keep], block_ids[keep], local_blocks)
+    scaled_errors = np.sqrt(np.diag(scaled))
+    factors = scaled_errors/errors
+    result = rebuild(fit, np.ones(keep.sum(), bool), fit['meas_df']['error_n'].to_numpy()*factors,
+                     fit['meas_df']['error_p'].to_numpy()*factors, scaled/np.outer(scaled_errors, scaled_errors))
+    return {'original_fit': original, 'refitted_fit': result, 'retained': keep,
             'node_scales': node_scales, 'correlated_blocks': block_results,
-            'measurement_covariance': scaled_v,
-            'q_final': final_residual@np.linalg.solve(scaled_v, final_residual)}
+            'measurement_scales': factors, 'scope': 'PDG scale pass on Python Q mean fits'}

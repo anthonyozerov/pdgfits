@@ -1,0 +1,2774 @@
+{
+  "date": "2026-09-09",
+  "baseline_commit": "51e2184",
+  "scope": "81 supported offline snapshot fits; IGNORE and tauhflav excluded as in the existing fit runner",
+  "ordinary": {
+    "fits": 81,
+    "targets": 1395,
+    "cases": [
+      {
+        "id": "fit:G(2000),G(1800)",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 1.645350522494482e-13,
+        "seconds": 0.4474853970004915
+      },
+      {
+        "id": "fit:Illustrative key",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.00011911927367336261,
+        "seconds": 0.7940730800000892
+      },
+      {
+        "id": "fit:eta^'(958)",
+        "targets": 46,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0048477800626614,
+        "seconds": 4.093288310999924
+      },
+      {
+        "id": "fit:phi(1020)",
+        "targets": 45,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004901869710437268,
+        "seconds": 3.643262503999722
+      },
+      {
+        "id": "fit:f_2(1270)",
+        "targets": 20,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004711584962805659,
+        "seconds": 2.1266031920004025
+      },
+      {
+        "id": "fit:f_1(1285)",
+        "targets": 16,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004721047369844911,
+        "seconds": 1.7699701439996716
+      },
+      {
+        "id": "fit:K_2^*(1430)",
+        "targets": 19,
+        "boundary_endpoints": 3,
+        "max_interior_q_residual": 0.004479615559432659,
+        "seconds": 2.6277992329996778
+      },
+      {
+        "id": "fit:K0l3 lin form fact",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 1.4766668883225975e-06,
+        "seconds": 0.37236153000048944
+      },
+      {
+        "id": "fit:f_2^'(1525)",
+        "targets": 13,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004732783155848352,
+        "seconds": 1.555413091000446
+      },
+      {
+        "id": "fit:rho_3(1690)",
+        "targets": 9,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004761378940580485,
+        "seconds": 1.314693411000917
+      },
+      {
+        "id": "fit:K^*(892) neutral",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.001379559181614809,
+        "seconds": 0.9434955790002277
+      },
+      {
+        "id": "fit:K0mu3 lin form fact",
+        "targets": 2,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 1.616484723854228e-13,
+        "seconds": 0.3981450749997748
+      },
+      {
+        "id": "fit:K(1)(1270)",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0012929288008534101,
+        "seconds": 0.6268027309997706
+      },
+      {
+        "id": "fit:pi_2(1670)",
+        "targets": 9,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0023552092590222173,
+        "seconds": 1.2433889160001854
+      },
+      {
+        "id": "fit:Upsilon-1S",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004771121593214467,
+        "seconds": 0.5563943509987439
+      },
+      {
+        "id": "fit:Upsilon(2S)",
+        "targets": 6,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0035880954182037073,
+        "seconds": 1.037712137998824
+      },
+      {
+        "id": "fit:K_3^*(1780)",
+        "targets": 8,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0028427428493829066,
+        "seconds": 1.1248333619987534
+      },
+      {
+        "id": "fit:D^*(2010)+",
+        "targets": 6,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.0914505649560766e-06,
+        "seconds": 0.8421227620001446
+      },
+      {
+        "id": "fit:K^*(1680)",
+        "targets": 7,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004532843553008092,
+        "seconds": 1.140581834000841
+      },
+      {
+        "id": "fit:f_0(1510)",
+        "targets": 11,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004089151739778529,
+        "seconds": 1.5230055550000543
+      },
+      {
+        "id": "fit:K_S",
+        "targets": 10,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0033095368294387972,
+        "seconds": 1.0927265070004069
+      },
+      {
+        "id": "fit:K0/K+- masses",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.9970692594361026e-11,
+        "seconds": 0.45755251399896224
+      },
+      {
+        "id": "fit:K0l3 form factors",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 4.46931380793103e-12,
+        "seconds": 0.49440084799971373
+      },
+      {
+        "id": "fit:K0l3 pole mass",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 5.258016244624741e-13,
+        "seconds": 0.4136355310001818
+      },
+      {
+        "id": "fit:K0e3 form factors",
+        "targets": 2,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 3.9612757518625585e-13,
+        "seconds": 0.3900433349990635
+      },
+      {
+        "id": "fit:Sigma+ decay param.",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0023933335358750085,
+        "seconds": 0.6371024479994958
+      },
+      {
+        "id": "fit:K_L eta+-,00 phase",
+        "targets": 8,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0007125198623754159,
+        "seconds": 0.8655039299992495
+      },
+      {
+        "id": "fit:K_L eta+-,00 ph CPT",
+        "targets": 8,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.000594918590529403,
+        "seconds": 1.0333514960002503
+      },
+      {
+        "id": "fit:Sigma+",
+        "targets": 6,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0017836533049191416,
+        "seconds": 1.0763096249993396
+      },
+      {
+        "id": "fit:Sigma-",
+        "targets": 7,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0021627582748795504,
+        "seconds": 1.2294414699990739
+      },
+      {
+        "id": "fit:Xi0",
+        "targets": 10,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.00020618908394975932,
+        "seconds": 1.2137219209998875
+      },
+      {
+        "id": "fit:Xi masses",
+        "targets": 4,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.0598235783708674e-08,
+        "seconds": 0.3782907820004766
+      },
+      {
+        "id": "fit:Omega mean lives",
+        "targets": 2,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.920264030592534e-11,
+        "seconds": 0.3132682869982091
+      },
+      {
+        "id": "fit:omega(782)",
+        "targets": 26,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004704235898834952,
+        "seconds": 2.5755254100004095
+      },
+      {
+        "id": "fit:D+-",
+        "targets": 53,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004969917132598312,
+        "seconds": 3.4998734639993927
+      },
+      {
+        "id": "fit:a_2(1320)",
+        "targets": 9,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004970964078307105,
+        "seconds": 1.3206353040004615
+      },
+      {
+        "id": "fit:D0-topological",
+        "targets": 8,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0011563089900028523,
+        "seconds": 0.8894172050004272
+      },
+      {
+        "id": "fit:Nu-mix s(23)-normal",
+        "targets": 1,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.002482858448857428,
+        "seconds": 0.30500743800075725
+      },
+      {
+        "id": "fit:Ds*+-",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0032607732589133853,
+        "seconds": 0.8959907200005546
+      },
+      {
+        "id": "fit:D_s1",
+        "targets": 12,
+        "boundary_endpoints": 2,
+        "max_interior_q_residual": 0.004120708503329684,
+        "seconds": 1.7137495160004619
+      },
+      {
+        "id": "fit:Lam-b-0",
+        "targets": 20,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0019955903776107675,
+        "seconds": 2.553997593000531
+      },
+      {
+        "id": "fit:K_L eta+-,00 param.",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.00015111533491207751,
+        "seconds": 0.7625764770000387
+      },
+      {
+        "id": "fit:B+J/psi",
+        "targets": 40,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004999743764301456,
+        "seconds": 3.4307353279982635
+      },
+      {
+        "id": "fit:pi0",
+        "targets": 6,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0009643299592445587,
+        "seconds": 1.1195642109996697
+      },
+      {
+        "id": "fit:B0S-BR",
+        "targets": 26,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004998224851910038,
+        "seconds": 3.395139422000284
+      },
+      {
+        "id": "fit:rho(770) neutral",
+        "targets": 17,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004227072033470947,
+        "seconds": 1.7157743939987995
+      },
+      {
+        "id": "fit:chi_c012 psi(2S)",
+        "targets": 170,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004896268047787089,
+        "seconds": 16.18124659299974
+      },
+      {
+        "id": "fit:pi masses",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.1656099136180273e-10,
+        "seconds": 0.3712921899987123
+      },
+      {
+        "id": "fit:eta_c J/psi psi(2S)",
+        "targets": 71,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004921769877597626,
+        "seconds": 11.008383304000745
+      },
+      {
+        "id": "fit:psi masses",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 7.426777415275865e-09,
+        "seconds": 0.43303124100020796
+      },
+      {
+        "id": "fit:K+-",
+        "targets": 33,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004414656426085628,
+        "seconds": 2.15587408600004
+      },
+      {
+        "id": "fit:eta",
+        "targets": 36,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0040222146829833605,
+        "seconds": 2.5812304179999046
+      },
+      {
+        "id": "fit:B masses",
+        "targets": 32,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0026807432607185433,
+        "seconds": 1.1847476540006028
+      },
+      {
+        "id": "fit:B0",
+        "targets": 61,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004244243938543946,
+        "seconds": 4.235300504000406
+      },
+      {
+        "id": "fit:Lambda",
+        "targets": 7,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 3.43700414635606e-05,
+        "seconds": 1.0323262050005724
+      },
+      {
+        "id": "fit:K+l3 lin form fact",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 7.993605777301127e-14,
+        "seconds": 0.40700046900019515
+      },
+      {
+        "id": "fit:K+mu3 lin form fact",
+        "targets": 2,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 1.8030021919912542e-13,
+        "seconds": 0.32998239799962903
+      },
+      {
+        "id": "fit:Lambda/Sigmas masses",
+        "targets": 8,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 6.600244759624729e-07,
+        "seconds": 0.5274644960009027
+      },
+      {
+        "id": "fit:Xibar+",
+        "targets": 9,
+        "boundary_endpoints": 2,
+        "max_interior_q_residual": 0.004806609105216797,
+        "seconds": 1.4509317470001406
+      },
+      {
+        "id": "fit:Xi_Lam_alpha",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0022334320939307872,
+        "seconds": 0.561413999999786
+      },
+      {
+        "id": "fit:Omega_c masses",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004940765848495676,
+        "seconds": 0.38918520100014575
+      },
+      {
+        "id": "fit:Omega masses",
+        "targets": 2,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 6.300737709352688e-12,
+        "seconds": 0.35520051999992575
+      },
+      {
+        "id": "fit:K^*(892) charged",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.00483949451699317,
+        "seconds": 0.9457371410007909
+      },
+      {
+        "id": "fit:D0",
+        "targets": 107,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004977755885846591,
+        "seconds": 7.243908329999613
+      },
+      {
+        "id": "fit:psi(3770)",
+        "targets": 10,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0024220203858220657,
+        "seconds": 1.1648861129997385
+      },
+      {
+        "id": "fit:Nu-mix Dm(32)-invert",
+        "targets": 1,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0013960564039283696,
+        "seconds": 0.32735574900107167
+      },
+      {
+        "id": "fit:Nu-mix Dm(32)-normal",
+        "targets": 1,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0022217698059545654,
+        "seconds": 0.312375470999541
+      },
+      {
+        "id": "fit:Lambda_c",
+        "targets": 84,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004106089203517627,
+        "seconds": 5.931297533999896
+      },
+      {
+        "id": "fit:Nu-mix s(23)-invert",
+        "targets": 1,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.003479483817439899,
+        "seconds": 0.3070391000001109
+      },
+      {
+        "id": "fit:Lam_c/Sig_c masses",
+        "targets": 29,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.003977146057536629,
+        "seconds": 1.395315887999459
+      },
+      {
+        "id": "fit:Xi(1530) mass",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 1.9915672238468574e-05,
+        "seconds": 0.42476109100061876
+      },
+      {
+        "id": "fit:K0mu3 form factors",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.6585333756656837e-07,
+        "seconds": 0.3959389439987717
+      },
+      {
+        "id": "fit:K0mu3 pole mass",
+        "targets": 2,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.184918912462308e-13,
+        "seconds": 0.41673557499962044
+      },
+      {
+        "id": "fit:K_L",
+        "targets": 44,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0047825769235174675,
+        "seconds": 3.478629858000204
+      },
+      {
+        "id": "fit:eta_c(2S)",
+        "targets": 7,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.003561256474795993,
+        "seconds": 3.9819181120001303
+      },
+      {
+        "id": "fit:D^*(2007)0",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004490292521392103,
+        "seconds": 1.0593786760000512
+      },
+      {
+        "id": "fit:Xi_c",
+        "targets": 11,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004783338008155669,
+        "seconds": 1.5696984080004768
+      },
+      {
+        "id": "fit:Xi_c masses",
+        "targets": 30,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.003619335708805238,
+        "seconds": 1.567734186000962
+      },
+      {
+        "id": "fit:D,D*,D_s,D_s* masses",
+        "targets": 28,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0016802996975684437,
+        "seconds": 1.4019450730011158
+      },
+      {
+        "id": "fit:D_s",
+        "targets": 32,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004596260033780553,
+        "seconds": 2.8982783450010174
+      },
+      {
+        "id": "fit:rho(770) charged",
+        "targets": 4,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 6.261854308853287e-05,
+        "seconds": 1.110870000000432
+      }
+    ]
+  },
+  "timing": {
+    "matched_complete_fits": 45,
+    "before_seconds": 1214.0826423349918,
+    "after_seconds": 101.15566484698684,
+    "speedup": 12.002122117149588,
+    "matched_labels": [
+      "fit:G(2000),G(1800)",
+      "fit:Illustrative key",
+      "fit:eta^'(958)",
+      "fit:phi(1020)",
+      "fit:f_2(1270)",
+      "fit:f_1(1285)",
+      "fit:K0l3 lin form fact",
+      "fit:f_2^'(1525)",
+      "fit:rho_3(1690)",
+      "fit:K^*(892) neutral",
+      "fit:K0mu3 lin form fact",
+      "fit:K(1)(1270)",
+      "fit:pi_2(1670)",
+      "fit:Upsilon-1S",
+      "fit:Upsilon(2S)",
+      "fit:K_3^*(1780)",
+      "fit:D^*(2010)+",
+      "fit:K^*(1680)",
+      "fit:f_0(1510)",
+      "fit:K_S",
+      "fit:K0/K+- masses",
+      "fit:K0l3 form factors",
+      "fit:K0l3 pole mass",
+      "fit:K0e3 form factors",
+      "fit:Sigma+ decay param.",
+      "fit:K_L eta+-,00 phase",
+      "fit:K_L eta+-,00 ph CPT",
+      "fit:Sigma+",
+      "fit:Sigma-",
+      "fit:Xi0",
+      "fit:Xi masses",
+      "fit:Omega mean lives",
+      "fit:omega(782)",
+      "fit:D+-",
+      "fit:a_2(1320)",
+      "fit:D0-topological",
+      "fit:Nu-mix s(23)-normal",
+      "fit:Ds*+-",
+      "fit:Lam-b-0",
+      "fit:K_L eta+-,00 param.",
+      "fit:B+J/psi",
+      "fit:pi0",
+      "fit:B0S-BR",
+      "fit:rho(770) neutral",
+      "fit:pi masses"
+    ]
+  },
+  "averages": {
+    "count": 2647,
+    "max_endpoint_q_residual": 0.004987926787442198,
+    "refined_asymmetric_cases": 824,
+    "max_refinement_in_se": 1.281599668755331e-07
+  },
+  "general_scales": {
+    "fits": 81,
+    "targets": 1395,
+    "draws": 256,
+    "seed": 81,
+    "score_tolerance": 0.001,
+    "mc_tolerance": 0,
+    "missing": [],
+    "cases": [
+      {
+        "id": "scale:chi_c012 psi(2S)",
+        "targets": 170,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004943591073242715,
+        "seconds": 1352.2056479710009,
+        "source": "scales-absolute-step.jsonl",
+        "nodes": 121,
+        "score_residual": 0.0008824127414056582,
+        "scale_evaluations": 987,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:B masses",
+        "targets": 32,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0033927862562279643,
+        "seconds": 4.862982299997384,
+        "source": "scales-other-final.jsonl",
+        "nodes": 23,
+        "score_residual": 0.0007071949408276046,
+        "scale_evaluations": 10,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:B0",
+        "targets": 61,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004768293177022542,
+        "seconds": 268.6567037780005,
+        "source": "scales-other-final.jsonl",
+        "nodes": 39,
+        "score_residual": 0.0007077899651877495,
+        "scale_evaluations": 199,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:D,D*,D_s,D_s* masses",
+        "targets": 28,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0008941050986095433,
+        "seconds": 3.1914321049989667,
+        "source": "scales-other-final.jsonl",
+        "nodes": 25,
+        "score_residual": 0.00042291964494795,
+        "scale_evaluations": 4,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:D0",
+        "targets": 107,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0049544398379310906,
+        "seconds": 36.07923849100189,
+        "source": "scales-other-final.jsonl",
+        "nodes": 72,
+        "score_residual": 0.0008329226851074845,
+        "scale_evaluations": 39,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:D^*(2007)0",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004871531822091768,
+        "seconds": 3.444168381000054,
+        "source": "scales-other-final.jsonl",
+        "nodes": 2,
+        "score_residual": 0.000875913331710089,
+        "scale_evaluations": 3,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:D_s",
+        "targets": 32,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004599224604318053,
+        "seconds": 9.424670634001814,
+        "source": "scales-other-final.jsonl",
+        "nodes": 19,
+        "score_residual": 0.0008819928620937001,
+        "scale_evaluations": 4,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:K+-",
+        "targets": 33,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004136534334833186,
+        "seconds": 11.019742188000237,
+        "source": "scales-other-final.jsonl",
+        "nodes": 17,
+        "score_residual": 0.00012136364759657292,
+        "scale_evaluations": 35,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:K+l3 lin form fact",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 1.5987211554602254e-14,
+        "seconds": 2.7801345589978155,
+        "source": "scales-other-final.jsonl",
+        "nodes": 3,
+        "score_residual": 0.0008221813591805516,
+        "scale_evaluations": 3,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:K+mu3 lin form fact",
+        "targets": 2,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.6645352591003757e-15,
+        "seconds": 2.6119557749989326,
+        "source": "scales-other-final.jsonl",
+        "nodes": 2,
+        "score_residual": 5.083906177073643e-13,
+        "scale_evaluations": 2,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:K0mu3 form factors",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 7.993605777301127e-15,
+        "seconds": 2.9634071119980945,
+        "source": "scales-other-final.jsonl",
+        "nodes": 3,
+        "score_residual": 0.0005903326016971633,
+        "scale_evaluations": 7,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:K0mu3 pole mass",
+        "targets": 2,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 1.9984014443252818e-15,
+        "seconds": 2.7459555070017814,
+        "source": "scales-other-final.jsonl",
+        "nodes": 2,
+        "score_residual": 0.0004887440011025479,
+        "scale_evaluations": 15,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:K^*(892) charged",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0048252876577450365,
+        "seconds": 5.066763437000191,
+        "source": "scales-other-final.jsonl",
+        "nodes": 2,
+        "score_residual": 0.0,
+        "scale_evaluations": 1,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:K_L",
+        "targets": 44,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004416192020268994,
+        "seconds": 18.71700900900032,
+        "source": "scales-other-final.jsonl",
+        "nodes": 17,
+        "score_residual": 2.1006141743384887e-05,
+        "scale_evaluations": 64,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:Lambda",
+        "targets": 7,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.70479798221146e-05,
+        "seconds": 5.988056154998048,
+        "source": "scales-other-final.jsonl",
+        "nodes": 4,
+        "score_residual": 2.4525878124292966e-05,
+        "scale_evaluations": 4,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:Lambda/Sigmas masses",
+        "targets": 8,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.717293057230563e-11,
+        "seconds": 2.746125435001886,
+        "source": "scales-other-final.jsonl",
+        "nodes": 7,
+        "score_residual": 0.0003938595024289837,
+        "scale_evaluations": 4,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:Lambda_c",
+        "targets": 84,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004336797258552849,
+        "seconds": 89.74000730899934,
+        "source": "scales-other-final.jsonl",
+        "nodes": 58,
+        "score_residual": 0.0008560623115574373,
+        "scale_evaluations": 269,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:Nu-mix Dm(32)-invert",
+        "targets": 1,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0015176850229998706,
+        "seconds": 2.282038053999713,
+        "source": "scales-other-final.jsonl",
+        "nodes": 1,
+        "score_residual": 5.609024801900286e-06,
+        "scale_evaluations": 4,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:Nu-mix Dm(32)-normal",
+        "targets": 1,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0027402588528673277,
+        "seconds": 2.1196531290006533,
+        "source": "scales-other-final.jsonl",
+        "nodes": 1,
+        "score_residual": 0.00033755813604312984,
+        "scale_evaluations": 2,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:Nu-mix s(23)-invert",
+        "targets": 1,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.003650351296058396,
+        "seconds": 2.93759069600128,
+        "source": "scales-other-final.jsonl",
+        "nodes": 1,
+        "score_residual": 0.0008543469620614363,
+        "scale_evaluations": 4,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:Omega masses",
+        "targets": 2,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 6.3016258877723885e-12,
+        "seconds": 2.0803347210021457,
+        "source": "scales-other-final.jsonl",
+        "nodes": 2,
+        "score_residual": 0.0,
+        "scale_evaluations": 1,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:Omega_c masses",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004633872074216061,
+        "seconds": 2.6041149070006213,
+        "source": "scales-other-final.jsonl",
+        "nodes": 2,
+        "score_residual": 2.5460451382741667e-06,
+        "scale_evaluations": 4,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:Xi(1530) mass",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 5.409006575973763e-13,
+        "seconds": 2.4595343039982254,
+        "source": "scales-other-final.jsonl",
+        "nodes": 3,
+        "score_residual": 0.0009558463853576171,
+        "scale_evaluations": 3,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:Xi_Lam_alpha",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004635897270070188,
+        "seconds": 3.053044120002596,
+        "source": "scales-other-final.jsonl",
+        "nodes": 3,
+        "score_residual": 0.000749218878520419,
+        "scale_evaluations": 6,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:Xi_c",
+        "targets": 11,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004810700087209074,
+        "seconds": 5.917923089000396,
+        "source": "scales-other-final.jsonl",
+        "nodes": 7,
+        "score_residual": 1.127871351869203e-09,
+        "scale_evaluations": 36,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:Xibar+",
+        "targets": 9,
+        "boundary_endpoints": 2,
+        "max_interior_q_residual": 0.004563984949518152,
+        "seconds": 4.788246771997365,
+        "source": "scales-other-final.jsonl",
+        "nodes": 4,
+        "score_residual": 8.756051439462453e-13,
+        "scale_evaluations": 2,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:eta",
+        "targets": 36,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.003057584168750793,
+        "seconds": 10.340676359999634,
+        "source": "scales-other-final.jsonl",
+        "nodes": 24,
+        "score_residual": 0.0008754762019655346,
+        "scale_evaluations": 7,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:eta_c(2S)",
+        "targets": 7,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004659923729107618,
+        "seconds": 28.950216928998998,
+        "source": "scales-other-final.jsonl",
+        "nodes": 4,
+        "score_residual": 0.0006419492783628078,
+        "scale_evaluations": 4,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:psi masses",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0002791540055913089,
+        "seconds": 2.344194855999376,
+        "source": "scales-other-final.jsonl",
+        "nodes": 3,
+        "score_residual": 0.00017937236048104488,
+        "scale_evaluations": 8,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:psi(3770)",
+        "targets": 10,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.003950051255895204,
+        "seconds": 7.3836954409998725,
+        "source": "scales-other-final.jsonl",
+        "nodes": 5,
+        "score_residual": 0.00042952769122583945,
+        "scale_evaluations": 6,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:rho(770) charged",
+        "targets": 4,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004369089801507631,
+        "seconds": 3.796532650998415,
+        "source": "scales-other-final.jsonl",
+        "nodes": 2,
+        "score_residual": 1.603162047558726e-13,
+        "scale_evaluations": 2,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:G(2000),G(1800)",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 1.1657341758564144e-13,
+        "seconds": 2.3722634300029313,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 3,
+        "score_residual": 0.0,
+        "scale_evaluations": 1,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:Illustrative key",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0002006546595285652,
+        "seconds": 3.67503465000118,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 3,
+        "score_residual": 0.0005948727064121195,
+        "scale_evaluations": 7,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:eta^'(958)",
+        "targets": 46,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004948025415082213,
+        "seconds": 17.38328811500105,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 30,
+        "score_residual": 0.0009558609351028591,
+        "scale_evaluations": 32,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:phi(1020)",
+        "targets": 45,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004030708917518666,
+        "seconds": 18.634904087000905,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 31,
+        "score_residual": 0.0005151074672657963,
+        "scale_evaluations": 7,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:f_2(1270)",
+        "targets": 20,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004574211591847899,
+        "seconds": 348.48711831000037,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 12,
+        "score_residual": 0.000966066612097749,
+        "scale_evaluations": 180,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:f_1(1285)",
+        "targets": 16,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004592313403962933,
+        "seconds": 8.443125183999655,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 6,
+        "score_residual": 0.00042670699641533805,
+        "scale_evaluations": 4,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:K_2^*(1430)",
+        "targets": 19,
+        "boundary_endpoints": 3,
+        "max_interior_q_residual": 0.004675676145772911,
+        "seconds": 19.539615739999135,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 12,
+        "score_residual": 7.550054074251245e-05,
+        "scale_evaluations": 7,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:K0l3 lin form fact",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.6645352591003757e-15,
+        "seconds": 2.6965667580006993,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 3,
+        "score_residual": 0.0008616525147387977,
+        "scale_evaluations": 6,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:f_2^'(1525)",
+        "targets": 13,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004650894137173012,
+        "seconds": 10.488567327000055,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 6,
+        "score_residual": 0.0009083656209087215,
+        "scale_evaluations": 55,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:rho_3(1690)",
+        "targets": 9,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004115021593271706,
+        "seconds": 6.588971234999917,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 5,
+        "score_residual": 1.7368119010874317e-05,
+        "scale_evaluations": 6,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:K^*(892) neutral",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.002490086061818886,
+        "seconds": 4.723920469001314,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 2,
+        "score_residual": 9.439574453029564e-05,
+        "scale_evaluations": 2,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:K0mu3 lin form fact",
+        "targets": 2,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 5.329070518200751e-15,
+        "seconds": 2.597370307001256,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 2,
+        "score_residual": 0.0007392908179669755,
+        "scale_evaluations": 4,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:K(1)(1270)",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0029521932353906433,
+        "seconds": 13.50123749100021,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 3,
+        "score_residual": 4.525346763983862e-11,
+        "scale_evaluations": 223,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:pi_2(1670)",
+        "targets": 9,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0025481488720295875,
+        "seconds": 6.1600068469997495,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 4,
+        "score_residual": 0.0,
+        "scale_evaluations": 1,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:Upsilon-1S",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.002880664673437172,
+        "seconds": 3.449668182998721,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 3,
+        "score_residual": 5.75470902425268e-06,
+        "scale_evaluations": 4,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:Upsilon(2S)",
+        "targets": 6,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0036079579863752542,
+        "seconds": 8.789918061997014,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 4,
+        "score_residual": 1.652091796700006e-10,
+        "scale_evaluations": 80,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:K_3^*(1780)",
+        "targets": 8,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0028355498326402273,
+        "seconds": 5.339648037999723,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 3,
+        "score_residual": 0.0,
+        "scale_evaluations": 1,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:D^*(2010)+",
+        "targets": 6,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 8.198042245055603e-11,
+        "seconds": 3.719816982997145,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 3,
+        "score_residual": 0.0,
+        "scale_evaluations": 1,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:K^*(1680)",
+        "targets": 7,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.003481228255778568,
+        "seconds": 31.774893754001823,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 4,
+        "score_residual": 2.0361232699883658e-09,
+        "scale_evaluations": 70,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:f_0(1510)",
+        "targets": 11,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0030815547578852964,
+        "seconds": 14.720375641998544,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 6,
+        "score_residual": 0.00015874563311257806,
+        "scale_evaluations": 230,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:K_S",
+        "targets": 10,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0033296954636197196,
+        "seconds": 4.0431465019973984,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 4,
+        "score_residual": 0.0,
+        "scale_evaluations": 1,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:K0/K+- masses",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.1236346015029994e-11,
+        "seconds": 2.244720230002713,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 2,
+        "score_residual": 8.548717289613705e-15,
+        "scale_evaluations": 2,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:K0l3 pole mass",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 1.3322676295501878e-14,
+        "seconds": 2.462090425000497,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 3,
+        "score_residual": 0.00047337556566351413,
+        "scale_evaluations": 7,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:K0e3 form factors",
+        "targets": 2,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 8.881784197001252e-15,
+        "seconds": 2.383193029996619,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 2,
+        "score_residual": 0.0002874487861458108,
+        "scale_evaluations": 11,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:Sigma+ decay param.",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0023901179561924835,
+        "seconds": 3.808310746000643,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 3,
+        "score_residual": 0.0,
+        "scale_evaluations": 1,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:K_L eta+-,00 phase",
+        "targets": 8,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.000695106512468513,
+        "seconds": 6.113667089997762,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 7,
+        "score_residual": 0.0009730270912794714,
+        "scale_evaluations": 8,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:K_L eta+-,00 ph CPT",
+        "targets": 8,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0008930608866553058,
+        "seconds": 6.414851402998465,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 6,
+        "score_residual": 0.0006901439649585617,
+        "scale_evaluations": 5,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:Sigma+",
+        "targets": 6,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004208659755782662,
+        "seconds": 6.155904969997209,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 3,
+        "score_residual": 0.0006560239101776055,
+        "scale_evaluations": 8,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:Sigma-",
+        "targets": 7,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.002162758306512913,
+        "seconds": 5.972363967997808,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 3,
+        "score_residual": 0.0,
+        "scale_evaluations": 1,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:Xi0",
+        "targets": 10,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.002407927164525425,
+        "seconds": 10.56045665000056,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 5,
+        "score_residual": 1.4402128933888036e-09,
+        "scale_evaluations": 100,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:Xi masses",
+        "targets": 4,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.6121327323380683e-12,
+        "seconds": 1.989015663999453,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 4,
+        "score_residual": 0.0,
+        "scale_evaluations": 1,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:Omega mean lives",
+        "targets": 2,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.920264030592534e-11,
+        "seconds": 1.6806444590001774,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 2,
+        "score_residual": 0.0,
+        "scale_evaluations": 1,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:omega(782)",
+        "targets": 26,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004845820011517787,
+        "seconds": 13.371451639999577,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 15,
+        "score_residual": 0.0001256417320503883,
+        "scale_evaluations": 10,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:D+-",
+        "targets": 53,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0049383534167013465,
+        "seconds": 14.589581795000413,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 35,
+        "score_residual": 0.0007538512119670965,
+        "scale_evaluations": 45,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:a_2(1320)",
+        "targets": 9,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0049556391481875295,
+        "seconds": 5.688541116000124,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 5,
+        "score_residual": 7.382983113757291e-15,
+        "scale_evaluations": 2,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:D0-topological",
+        "targets": 8,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0011589262479761997,
+        "seconds": 3.842886009999347,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 3,
+        "score_residual": 0.0,
+        "scale_evaluations": 1,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:Nu-mix s(23)-normal",
+        "targets": 1,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.002482852966798177,
+        "seconds": 1.9429457709993585,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 1,
+        "score_residual": 0.0,
+        "scale_evaluations": 1,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:Ds*+-",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.003260773204173839,
+        "seconds": 4.272175285997946,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 2,
+        "score_residual": 2.7597878528397626e-15,
+        "scale_evaluations": 1,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:D_s1",
+        "targets": 12,
+        "boundary_endpoints": 2,
+        "max_interior_q_residual": 0.004626081393654058,
+        "seconds": 30.111977111999295,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 7,
+        "score_residual": 0.00037243550792404045,
+        "scale_evaluations": 39,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:Lam-b-0",
+        "targets": 20,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0028564890571223245,
+        "seconds": 198.81023988000015,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 14,
+        "score_residual": 0.0007126600581001783,
+        "scale_evaluations": 228,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:K_L eta+-,00 param.",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.00012124466770391251,
+        "seconds": 3.962192610000784,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 4,
+        "score_residual": 0.00036280039244529494,
+        "scale_evaluations": 4,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:B+J/psi",
+        "targets": 40,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.00497323863948651,
+        "seconds": 59.17039937300069,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 27,
+        "score_residual": 0.000909636880914555,
+        "scale_evaluations": 208,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:pi0",
+        "targets": 6,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0011488084478630256,
+        "seconds": 5.222254239000904,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 2,
+        "score_residual": 1.3350431871117507e-13,
+        "scale_evaluations": 2,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:rho(770) neutral",
+        "targets": 17,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0046382279241221624,
+        "seconds": 6.265820897002413,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 9,
+        "score_residual": 0.0007666041755999831,
+        "scale_evaluations": 3,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:K0l3 form factors",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 4.085620730620576e-14,
+        "seconds": 2.6550436889992852,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 5,
+        "score_residual": 0.0007066329730226473,
+        "scale_evaluations": 27,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:B0S-BR",
+        "targets": 26,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004793086058221263,
+        "seconds": 106.20849717500096,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 19,
+        "score_residual": 0.0004663964698982462,
+        "scale_evaluations": 105,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:Lam_c/Sig_c masses",
+        "targets": 29,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004040683024058467,
+        "seconds": 20.160650837002322,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 17,
+        "score_residual": 8.572229961201216e-06,
+        "scale_evaluations": 62,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:Xi_c masses",
+        "targets": 30,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004926874806182369,
+        "seconds": 7.780526171998645,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 18,
+        "score_residual": 0.00067841127805357,
+        "scale_evaluations": 85,
+        "minimum_effective_draws": 73.92429032217323
+      },
+      {
+        "id": "scale:pi masses",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 1.5048717827426117e-10,
+        "seconds": 1.4183053630003997,
+        "source": "scales-recheck-final.jsonl",
+        "nodes": 2,
+        "score_residual": 1.9690915564751776e-12,
+        "scale_evaluations": 2,
+        "minimum_effective_draws": 256.0
+      },
+      {
+        "id": "scale:eta_c J/psi psi(2S)",
+        "targets": 71,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004942143101672514,
+        "seconds": 1883.6451665409986,
+        "source": "scales-eta-complete.jsonl",
+        "nodes": 51,
+        "score_residual": 0.0009926385449595398,
+        "scale_evaluations": 1303,
+        "minimum_effective_draws": 256.0
+      }
+    ],
+    "failed_attempts": [
+      {
+        "id": "scale:eta_c J/psi psi(2S)",
+        "source": "scales-eta-final.jsonl",
+        "exception": "TimeoutError: Case exceeded 1800 seconds",
+        "resolved_by": "scales-eta-complete.jsonl"
+      }
+    ]
+  },
+  "pdg_scales": {
+    "fit_and_cut_cases": 162,
+    "targets": 2790,
+    "cases": [
+      {
+        "id": "pdg:G(2000),G(1800):False",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 1.1657341758564144e-13,
+        "seconds": 2.6727554369972495
+      },
+      {
+        "id": "pdg:G(2000),G(1800):True",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 1.1657341758564144e-13,
+        "seconds": 1.3536577439990651
+      },
+      {
+        "id": "pdg:Illustrative key:False",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0002575888838280971,
+        "seconds": 4.884525561999908
+      },
+      {
+        "id": "pdg:Illustrative key:True",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.00032357470772192976,
+        "seconds": 3.759824470998865
+      },
+      {
+        "id": "pdg:eta^'(958):False",
+        "targets": 46,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004928496264945181,
+        "seconds": 21.219308210002055
+      },
+      {
+        "id": "pdg:eta^'(958):True",
+        "targets": 46,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004285138732996074,
+        "seconds": 20.2687795439997
+      },
+      {
+        "id": "pdg:phi(1020):False",
+        "targets": 45,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004104873745369275,
+        "seconds": 17.897949083999265
+      },
+      {
+        "id": "pdg:phi(1020):True",
+        "targets": 45,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004929808832681459,
+        "seconds": 15.237989400000515
+      },
+      {
+        "id": "pdg:f_2(1270):False",
+        "targets": 20,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.003651803935426301,
+        "seconds": 8.32109754799967
+      },
+      {
+        "id": "pdg:f_2(1270):True",
+        "targets": 20,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004886674805113955,
+        "seconds": 8.36793871700138
+      },
+      {
+        "id": "pdg:f_1(1285):False",
+        "targets": 16,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004166378754577593,
+        "seconds": 8.131908005998412
+      },
+      {
+        "id": "pdg:f_1(1285):True",
+        "targets": 16,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004766265858870966,
+        "seconds": 7.570093000002089
+      },
+      {
+        "id": "pdg:K_2^*(1430):False",
+        "targets": 19,
+        "boundary_endpoints": 3,
+        "max_interior_q_residual": 0.004630847902049595,
+        "seconds": 10.757377514000837
+      },
+      {
+        "id": "pdg:K_2^*(1430):True",
+        "targets": 19,
+        "boundary_endpoints": 3,
+        "max_interior_q_residual": 0.004793006867155114,
+        "seconds": 10.79098379700008
+      },
+      {
+        "id": "pdg:K0l3 lin form fact:False",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 8.43769498715119e-15,
+        "seconds": 2.3547627549996832
+      },
+      {
+        "id": "pdg:K0l3 lin form fact:True",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 3.552713678800501e-15,
+        "seconds": 2.4369721690018196
+      },
+      {
+        "id": "pdg:f_2^'(1525):False",
+        "targets": 13,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004646218894912124,
+        "seconds": 8.380828470999404
+      },
+      {
+        "id": "pdg:f_2^'(1525):True",
+        "targets": 13,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.003949454132044394,
+        "seconds": 7.867323337999551
+      },
+      {
+        "id": "pdg:rho_3(1690):False",
+        "targets": 9,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004028374372513355,
+        "seconds": 6.971385520002514
+      },
+      {
+        "id": "pdg:rho_3(1690):True",
+        "targets": 9,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0040481927818341035,
+        "seconds": 5.854203413000505
+      },
+      {
+        "id": "pdg:K^*(892) neutral:False",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.002574155568613179,
+        "seconds": 5.044466606999777
+      },
+      {
+        "id": "pdg:K^*(892) neutral:True",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0031322046705213324,
+        "seconds": 4.176622169998154
+      },
+      {
+        "id": "pdg:K0mu3 lin form fact:False",
+        "targets": 2,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 1.3322676295501878e-15,
+        "seconds": 2.2837843189990963
+      },
+      {
+        "id": "pdg:K0mu3 lin form fact:True",
+        "targets": 2,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 3.1086244689504383e-15,
+        "seconds": 2.1478348079981515
+      },
+      {
+        "id": "pdg:K(1)(1270):False",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004430915147751513,
+        "seconds": 4.133715369000129
+      },
+      {
+        "id": "pdg:K(1)(1270):True",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004430915147751513,
+        "seconds": 1.681690173001698
+      },
+      {
+        "id": "pdg:pi_2(1670):False",
+        "targets": 9,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0025481488720295875,
+        "seconds": 6.135391075997177
+      },
+      {
+        "id": "pdg:pi_2(1670):True",
+        "targets": 9,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.002389722326713084,
+        "seconds": 5.336347079999541
+      },
+      {
+        "id": "pdg:Upsilon-1S:False",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.003067064554550969,
+        "seconds": 4.0667385650012875
+      },
+      {
+        "id": "pdg:Upsilon-1S:True",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.003215925384830287,
+        "seconds": 2.8512381200016534
+      },
+      {
+        "id": "pdg:Upsilon(2S):False",
+        "targets": 6,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0036066173069446705,
+        "seconds": 5.666133749000437
+      },
+      {
+        "id": "pdg:Upsilon(2S):True",
+        "targets": 6,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0036623063661291866,
+        "seconds": 5.232885131998046
+      },
+      {
+        "id": "pdg:K_3^*(1780):False",
+        "targets": 8,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0028355498326402273,
+        "seconds": 5.282737785997597
+      },
+      {
+        "id": "pdg:K_3^*(1780):True",
+        "targets": 8,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0028355498326402273,
+        "seconds": 2.8804401769994
+      },
+      {
+        "id": "pdg:D^*(2010)+:False",
+        "targets": 6,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 8.198042245055603e-11,
+        "seconds": 2.7846501170024567
+      },
+      {
+        "id": "pdg:D^*(2010)+:True",
+        "targets": 6,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.431388423929093e-13,
+        "seconds": 2.7175676340011705
+      },
+      {
+        "id": "pdg:K^*(1680):False",
+        "targets": 7,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004874359528057148,
+        "seconds": 5.746912033999251
+      },
+      {
+        "id": "pdg:K^*(1680):True",
+        "targets": 7,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0047378828253117344,
+        "seconds": 4.555984874001297
+      },
+      {
+        "id": "pdg:f_0(1510):False",
+        "targets": 11,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0036525456286877755,
+        "seconds": 7.1287864450023335
+      },
+      {
+        "id": "pdg:f_0(1510):True",
+        "targets": 11,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0036525456286877755,
+        "seconds": 4.595173973000783
+      },
+      {
+        "id": "pdg:K_S:False",
+        "targets": 10,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0033296954636197196,
+        "seconds": 5.2269369259993255
+      },
+      {
+        "id": "pdg:K_S:True",
+        "targets": 10,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0033324954277204055,
+        "seconds": 4.579946131001634
+      },
+      {
+        "id": "pdg:K0/K+- masses:False",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.3785418079569354e-11,
+        "seconds": 2.3958819290019164
+      },
+      {
+        "id": "pdg:K0/K+- masses:True",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 5.068834241228615e-12,
+        "seconds": 2.322067793000315
+      },
+      {
+        "id": "pdg:K0l3 form factors:False",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 6.750155989720952e-14,
+        "seconds": 2.528032460999384
+      },
+      {
+        "id": "pdg:K0l3 form factors:True",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 6.750155989720952e-14,
+        "seconds": 1.3771013250006945
+      },
+      {
+        "id": "pdg:K0l3 pole mass:False",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 1.554312234475219e-14,
+        "seconds": 2.1538240340014454
+      },
+      {
+        "id": "pdg:K0l3 pole mass:True",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 1.554312234475219e-14,
+        "seconds": 1.0612905560010404
+      },
+      {
+        "id": "pdg:K0e3 form factors:False",
+        "targets": 2,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 1.6431300764452317e-14,
+        "seconds": 2.1075009199994383
+      },
+      {
+        "id": "pdg:K0e3 form factors:True",
+        "targets": 2,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 1.6431300764452317e-14,
+        "seconds": 1.254356542001915
+      },
+      {
+        "id": "pdg:Sigma+ decay param.:False",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0023901195931070873,
+        "seconds": 4.474744503000693
+      },
+      {
+        "id": "pdg:Sigma+ decay param.:True",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.002313319560797833,
+        "seconds": 3.296557670000766
+      },
+      {
+        "id": "pdg:K_L eta+-,00 phase:False",
+        "targets": 8,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0007353859323604439,
+        "seconds": 7.820591362000414
+      },
+      {
+        "id": "pdg:K_L eta+-,00 phase:True",
+        "targets": 8,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0007444082496217419,
+        "seconds": 6.201309336000122
+      },
+      {
+        "id": "pdg:K_L eta+-,00 ph CPT:False",
+        "targets": 8,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0008003145424186897,
+        "seconds": 8.580149085002631
+      },
+      {
+        "id": "pdg:K_L eta+-,00 ph CPT:True",
+        "targets": 8,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0008300116722246287,
+        "seconds": 6.57106650300193
+      },
+      {
+        "id": "pdg:Sigma+:False",
+        "targets": 6,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0027526970889688585,
+        "seconds": 6.903142712002591
+      },
+      {
+        "id": "pdg:Sigma+:True",
+        "targets": 6,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0032091614980442884,
+        "seconds": 6.335706097001093
+      },
+      {
+        "id": "pdg:Sigma-:False",
+        "targets": 7,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.002269045107336609,
+        "seconds": 6.534611805000168
+      },
+      {
+        "id": "pdg:Sigma-:True",
+        "targets": 7,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0022690451103066778,
+        "seconds": 6.5563403199994355
+      },
+      {
+        "id": "pdg:Xi0:False",
+        "targets": 10,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.00183653058362232,
+        "seconds": 6.3459195800023736
+      },
+      {
+        "id": "pdg:Xi0:True",
+        "targets": 10,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.00024399112700990155,
+        "seconds": 5.301816490999045
+      },
+      {
+        "id": "pdg:Xi masses:False",
+        "targets": 4,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.6121327323380683e-12,
+        "seconds": 2.094874284997786
+      },
+      {
+        "id": "pdg:Xi masses:True",
+        "targets": 4,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 3.5513814111709507e-12,
+        "seconds": 2.145365188996948
+      },
+      {
+        "id": "pdg:Omega mean lives:False",
+        "targets": 2,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.920264030592534e-11,
+        "seconds": 1.7498230029996193
+      },
+      {
+        "id": "pdg:Omega mean lives:True",
+        "targets": 2,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 4.107825191113079e-15,
+        "seconds": 1.8911418999996386
+      },
+      {
+        "id": "pdg:omega(782):False",
+        "targets": 26,
+        "boundary_endpoints": 1,
+        "max_interior_q_residual": 0.004712079732001939,
+        "seconds": 11.325666068001738
+      },
+      {
+        "id": "pdg:omega(782):True",
+        "targets": 26,
+        "boundary_endpoints": 1,
+        "max_interior_q_residual": 0.004727945800812705,
+        "seconds": 9.722755704999145
+      },
+      {
+        "id": "pdg:D+-:False",
+        "targets": 53,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004967822544347911,
+        "seconds": 15.935865242001455
+      },
+      {
+        "id": "pdg:D+-:True",
+        "targets": 53,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0042773042245549675,
+        "seconds": 15.143136761002097
+      },
+      {
+        "id": "pdg:a_2(1320):False",
+        "targets": 9,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004955733521887495,
+        "seconds": 9.350890507997974
+      },
+      {
+        "id": "pdg:a_2(1320):True",
+        "targets": 9,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004955733521887495,
+        "seconds": 5.718184517001646
+      },
+      {
+        "id": "pdg:D0-topological:False",
+        "targets": 8,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0011589262479766438,
+        "seconds": 6.10704328599968
+      },
+      {
+        "id": "pdg:D0-topological:True",
+        "targets": 8,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0011589262479766438,
+        "seconds": 3.1972425550011394
+      },
+      {
+        "id": "pdg:Nu-mix s(23)-normal:False",
+        "targets": 1,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0013156890493304374,
+        "seconds": 2.113009160999354
+      },
+      {
+        "id": "pdg:Nu-mix s(23)-normal:True",
+        "targets": 1,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0013156890493304374,
+        "seconds": 1.3708743679999316
+      },
+      {
+        "id": "pdg:Ds*+-:False",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.003260773204173839,
+        "seconds": 6.8146350829993025
+      },
+      {
+        "id": "pdg:Ds*+-:True",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.003259076202441813,
+        "seconds": 5.695632104998367
+      },
+      {
+        "id": "pdg:D_s1:False",
+        "targets": 12,
+        "boundary_endpoints": 2,
+        "max_interior_q_residual": 0.0036830781179997274,
+        "seconds": 10.066334761999315
+      },
+      {
+        "id": "pdg:D_s1:True",
+        "targets": 12,
+        "boundary_endpoints": 2,
+        "max_interior_q_residual": 0.0036830781179997274,
+        "seconds": 6.516334075000486
+      },
+      {
+        "id": "pdg:Lam-b-0:False",
+        "targets": 20,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.003045478122899681,
+        "seconds": 15.152047163999669
+      },
+      {
+        "id": "pdg:Lam-b-0:True",
+        "targets": 20,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004481905416475751,
+        "seconds": 13.896685267001885
+      },
+      {
+        "id": "pdg:K_L eta+-,00 param.:False",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 9.889830492415541e-05,
+        "seconds": 6.795722705002845
+      },
+      {
+        "id": "pdg:K_L eta+-,00 param.:True",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0001167868396070304,
+        "seconds": 5.157443397998577
+      },
+      {
+        "id": "pdg:B+J/psi:False",
+        "targets": 40,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004995326495325969,
+        "seconds": 20.605718685998
+      },
+      {
+        "id": "pdg:B+J/psi:True",
+        "targets": 40,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004605271311884707,
+        "seconds": 24.654634834998433
+      },
+      {
+        "id": "pdg:pi0:False",
+        "targets": 6,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0011960573025255883,
+        "seconds": 6.078987922999659
+      },
+      {
+        "id": "pdg:pi0:True",
+        "targets": 6,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0014080678457828455,
+        "seconds": 5.129521454000496
+      },
+      {
+        "id": "pdg:B0S-BR:False",
+        "targets": 26,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0033027466741106792,
+        "seconds": 16.4220509509978
+      },
+      {
+        "id": "pdg:B0S-BR:True",
+        "targets": 26,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004441620712739791,
+        "seconds": 16.074437580999074
+      },
+      {
+        "id": "pdg:rho(770) neutral:False",
+        "targets": 17,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004002168575067522,
+        "seconds": 11.242130679002003
+      },
+      {
+        "id": "pdg:rho(770) neutral:True",
+        "targets": 17,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004002168629403613,
+        "seconds": 10.15332957499777
+      },
+      {
+        "id": "pdg:chi_c012 psi(2S):False",
+        "targets": 170,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004892385040278668,
+        "seconds": 112.92974989399954
+      },
+      {
+        "id": "pdg:chi_c012 psi(2S):True",
+        "targets": 170,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004896515769402754,
+        "seconds": 120.9320963350001
+      },
+      {
+        "id": "pdg:pi masses:False",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 1.3454970471116212e-10,
+        "seconds": 2.9621356060015387
+      },
+      {
+        "id": "pdg:pi masses:True",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 1.3454970471116212e-10,
+        "seconds": 1.746123216998967
+      },
+      {
+        "id": "pdg:eta_c J/psi psi(2S):False",
+        "targets": 71,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.00488137827566959,
+        "seconds": 43.249217859000055
+      },
+      {
+        "id": "pdg:eta_c J/psi psi(2S):True",
+        "targets": 71,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004971910978881056,
+        "seconds": 48.6774257290017
+      },
+      {
+        "id": "pdg:psi masses:False",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.00010431842631142274,
+        "seconds": 3.4058557149983244
+      },
+      {
+        "id": "pdg:psi masses:True",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 7.79428449426689e-06,
+        "seconds": 3.1572408829997585
+      },
+      {
+        "id": "pdg:K+-:False",
+        "targets": 33,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004036453723557543,
+        "seconds": 16.500855873000546
+      },
+      {
+        "id": "pdg:K+-:True",
+        "targets": 33,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.00443021462075599,
+        "seconds": 14.390943653001159
+      },
+      {
+        "id": "pdg:eta:False",
+        "targets": 36,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0030955302537556406,
+        "seconds": 22.862437750001845
+      },
+      {
+        "id": "pdg:eta:True",
+        "targets": 36,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.003733432786633628,
+        "seconds": 18.28350844599845
+      },
+      {
+        "id": "pdg:B masses:False",
+        "targets": 32,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0026763327825349847,
+        "seconds": 5.706643214001815
+      },
+      {
+        "id": "pdg:B masses:True",
+        "targets": 32,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0026763327825332084,
+        "seconds": 5.226724968000781
+      },
+      {
+        "id": "pdg:B0:False",
+        "targets": 61,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004483199942178828,
+        "seconds": 21.014650167999207
+      },
+      {
+        "id": "pdg:B0:True",
+        "targets": 61,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0045363768130854965,
+        "seconds": 22.768038230002276
+      },
+      {
+        "id": "pdg:Lambda:False",
+        "targets": 7,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.6586502068326467e-05,
+        "seconds": 9.737368933001562
+      },
+      {
+        "id": "pdg:Lambda:True",
+        "targets": 7,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.7603867748027255e-05,
+        "seconds": 7.877633878997585
+      },
+      {
+        "id": "pdg:K+l3 lin form fact:False",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 7.549516567451064e-15,
+        "seconds": 3.8774226840032497
+      },
+      {
+        "id": "pdg:K+l3 lin form fact:True",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 1.8207657603852567e-14,
+        "seconds": 3.823162914999557
+      },
+      {
+        "id": "pdg:K+mu3 lin form fact:False",
+        "targets": 2,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.220446049250313e-15,
+        "seconds": 3.417790720002813
+      },
+      {
+        "id": "pdg:K+mu3 lin form fact:True",
+        "targets": 2,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.220446049250313e-15,
+        "seconds": 1.4419236840003578
+      },
+      {
+        "id": "pdg:Lambda/Sigmas masses:False",
+        "targets": 8,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.9046987037872896e-11,
+        "seconds": 3.8315229599975282
+      },
+      {
+        "id": "pdg:Lambda/Sigmas masses:True",
+        "targets": 8,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 1.4644285784015665e-11,
+        "seconds": 3.277659087001666
+      },
+      {
+        "id": "pdg:Xibar+:False",
+        "targets": 9,
+        "boundary_endpoints": 1,
+        "max_interior_q_residual": 0.004783818357688485,
+        "seconds": 8.607989766998799
+      },
+      {
+        "id": "pdg:Xibar+:True",
+        "targets": 9,
+        "boundary_endpoints": 2,
+        "max_interior_q_residual": 0.004564415603035332,
+        "seconds": 7.3486844890030625
+      },
+      {
+        "id": "pdg:Xi_Lam_alpha:False",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004157309095081274,
+        "seconds": 5.665744007998001
+      },
+      {
+        "id": "pdg:Xi_Lam_alpha:True",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004421133377983111,
+        "seconds": 4.23450724900249
+      },
+      {
+        "id": "pdg:Omega_c masses:False",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0049613000856183476,
+        "seconds": 2.9964195749998908
+      },
+      {
+        "id": "pdg:Omega_c masses:True",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.00463387207511734,
+        "seconds": 2.831106366997119
+      },
+      {
+        "id": "pdg:Omega masses:False",
+        "targets": 2,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 6.3016258877723885e-12,
+        "seconds": 2.659732043000986
+      },
+      {
+        "id": "pdg:Omega masses:True",
+        "targets": 2,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 6.3016258877723885e-12,
+        "seconds": 1.6216563779998978
+      },
+      {
+        "id": "pdg:K^*(892) charged:False",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0048252876577450365,
+        "seconds": 7.244731971000874
+      },
+      {
+        "id": "pdg:K^*(892) charged:True",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0048252876577450365,
+        "seconds": 3.884288753000874
+      },
+      {
+        "id": "pdg:D0:False",
+        "targets": 107,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004954427283024643,
+        "seconds": 49.18261961499957
+      },
+      {
+        "id": "pdg:D0:True",
+        "targets": 107,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004841406294531225,
+        "seconds": 49.62946722700144
+      },
+      {
+        "id": "pdg:psi(3770):False",
+        "targets": 10,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.003961859288324376,
+        "seconds": 9.007087691999914
+      },
+      {
+        "id": "pdg:psi(3770):True",
+        "targets": 10,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004687048201338584,
+        "seconds": 10.354850613999588
+      },
+      {
+        "id": "pdg:Nu-mix Dm(32)-invert:False",
+        "targets": 1,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004401873553082858,
+        "seconds": 2.587849348998134
+      },
+      {
+        "id": "pdg:Nu-mix Dm(32)-invert:True",
+        "targets": 1,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004401873553082858,
+        "seconds": 1.1768425900008879
+      },
+      {
+        "id": "pdg:Nu-mix Dm(32)-normal:False",
+        "targets": 1,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0030670512060151367,
+        "seconds": 2.4395158119987173
+      },
+      {
+        "id": "pdg:Nu-mix Dm(32)-normal:True",
+        "targets": 1,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0002523963824385689,
+        "seconds": 2.475313261998963
+      },
+      {
+        "id": "pdg:Lambda_c:False",
+        "targets": 84,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004403746433084166,
+        "seconds": 38.315336269999534
+      },
+      {
+        "id": "pdg:Lambda_c:True",
+        "targets": 84,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0046786689664948256,
+        "seconds": 19.775964002001274
+      },
+      {
+        "id": "pdg:Nu-mix s(23)-invert:False",
+        "targets": 1,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0013581569446623476,
+        "seconds": 1.0689339849996031
+      },
+      {
+        "id": "pdg:Nu-mix s(23)-invert:True",
+        "targets": 1,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0013581569446623476,
+        "seconds": 0.5415161199998693
+      },
+      {
+        "id": "pdg:Lam_c/Sig_c masses:False",
+        "targets": 29,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004040687129609921,
+        "seconds": 3.622197849999793
+      },
+      {
+        "id": "pdg:Lam_c/Sig_c masses:True",
+        "targets": 29,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004011003049567918,
+        "seconds": 3.734399940000003
+      },
+      {
+        "id": "pdg:Xi(1530) mass:False",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.7000623958883807e-13,
+        "seconds": 2.572980008000741
+      },
+      {
+        "id": "pdg:Xi(1530) mass:True",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.7000623958883807e-13,
+        "seconds": 1.494979022001644
+      },
+      {
+        "id": "pdg:K0mu3 form factors:False",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.6645352591003757e-15,
+        "seconds": 2.9017378099997586
+      },
+      {
+        "id": "pdg:K0mu3 form factors:True",
+        "targets": 3,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 2.6645352591003757e-15,
+        "seconds": 1.2525433369992243
+      },
+      {
+        "id": "pdg:K0mu3 pole mass:False",
+        "targets": 2,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 5.773159728050814e-15,
+        "seconds": 2.3963632580016565
+      },
+      {
+        "id": "pdg:K0mu3 pole mass:True",
+        "targets": 2,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 5.773159728050814e-15,
+        "seconds": 1.0614153320020705
+      },
+      {
+        "id": "pdg:K_L:False",
+        "targets": 44,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004861272396013305,
+        "seconds": 13.17137072100013
+      },
+      {
+        "id": "pdg:K_L:True",
+        "targets": 44,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004996918345479884,
+        "seconds": 11.00466352100193
+      },
+      {
+        "id": "pdg:eta_c(2S):False",
+        "targets": 7,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.003264297801082394,
+        "seconds": 8.110542954000266
+      },
+      {
+        "id": "pdg:eta_c(2S):True",
+        "targets": 7,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.003264297801082394,
+        "seconds": 6.205882924001344
+      },
+      {
+        "id": "pdg:D^*(2007)0:False",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004909468286186769,
+        "seconds": 4.668148131000635
+      },
+      {
+        "id": "pdg:D^*(2007)0:True",
+        "targets": 5,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004584535372611498,
+        "seconds": 4.077882908000902
+      },
+      {
+        "id": "pdg:Xi_c:False",
+        "targets": 11,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0049470533041549025,
+        "seconds": 6.476998802998423
+      },
+      {
+        "id": "pdg:Xi_c:True",
+        "targets": 11,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0049470533041549025,
+        "seconds": 3.892632450999372
+      },
+      {
+        "id": "pdg:Xi_c masses:False",
+        "targets": 30,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0037339341344573285,
+        "seconds": 4.415466125999956
+      },
+      {
+        "id": "pdg:Xi_c masses:True",
+        "targets": 30,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004515619104974888,
+        "seconds": 4.417666286997701
+      },
+      {
+        "id": "pdg:D,D*,D_s,D_s* masses:False",
+        "targets": 28,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0021178976608524636,
+        "seconds": 4.0541936209992855
+      },
+      {
+        "id": "pdg:D,D*,D_s,D_s* masses:True",
+        "targets": 28,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.0008220631665807332,
+        "seconds": 3.3772725840026396
+      },
+      {
+        "id": "pdg:D_s:False",
+        "targets": 32,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004599224578016425,
+        "seconds": 10.874154512999667
+      },
+      {
+        "id": "pdg:D_s:True",
+        "targets": 32,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004599224577972905,
+        "seconds": 9.510196903000178
+      },
+      {
+        "id": "pdg:rho(770) charged:False",
+        "targets": 4,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004111753501692128,
+        "seconds": 5.500020884999685
+      },
+      {
+        "id": "pdg:rho(770) charged:True",
+        "targets": 4,
+        "boundary_endpoints": 0,
+        "max_interior_q_residual": 0.004173277926291519,
+        "seconds": 4.6278177429994685
+      }
+    ],
+    "failures": []
+  },
+  "limits": [
+    "Numerical checks do not prove global optimality or interval coverage.",
+    "Node-scale intervals condition on estimated scales.",
+    "Timing is a matched measured workload, not a uniform speedup for every API."
+  ]
+}

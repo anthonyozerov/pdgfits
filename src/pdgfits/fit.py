@@ -453,6 +453,8 @@ def run_fit(label, verbose=True, optimizer='minuit', fit_space='unconstrained'):
         'node_funcs': node_funcs,
         'parameter_funcs': parameter_funcs,
         'mu': mu,
+        'mu_adjust': mu_adjust,
+        'corr_mat': corr_mat,
         'meas_df': meas_df,
         'rel_df': rel_df,
         'fit_df': fit_df,

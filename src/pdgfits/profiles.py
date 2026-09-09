@@ -6,7 +6,7 @@ import time
 import jax
 import jax.numpy as jnp
 import numpy as np
-from scipy.optimize import NonlinearConstraint, OptimizeResult, minimize, root
+from scipy.optimize import NonlinearConstraint, OptimizeResult, lsq_linear, minimize, root
 
 
 @dataclass
@@ -24,6 +24,7 @@ class ProfilePoint:
     nit: int | None = None
     runtime_sec: float | None = None
     descent_improvement: float | None = None
+    fitted_values: list | None = None
 
 
 @dataclass(frozen=True)
@@ -51,6 +52,9 @@ def build_constrained_profile_chi2(
     solver_options=None,
     chi2_grad_jax=None,
     chi2_hess_jax=None,
+    linear_constraint=None,
+    target_derivatives=None,
+    chi2_value_and_grad=None,
 ):
     """Return a checked profile-chi2 callable for fixing target_func(params)=v.
 
@@ -72,7 +76,7 @@ def build_constrained_profile_chi2(
     stationarity_fun_tol = 1e-4
 
     def chi2_np(x):
-        val = _as_float(chi2(jnp.asarray(x, dtype=jnp.float64)))
+        val = _as_float(chi2(x) if chi2_value_and_grad is None else chi2_value_and_grad(x)[0])
         if not np.isfinite(val):
             return np.inf
         return val
@@ -81,41 +85,48 @@ def build_constrained_profile_chi2(
         chi2_grad_jax = jax.jit(jax.grad(chi2))
 
     def chi2_grad_np(x):
-        return np.asarray(chi2_grad_jax(jnp.asarray(x, dtype=jnp.float64)), dtype=np.float64)
+        return np.asarray(chi2_grad_jax(x) if chi2_value_and_grad is None else chi2_value_and_grad(x)[1], dtype=np.float64)
 
     if chi2_hess_jax is None:
         chi2_hess_jax = jax.jit(jax.hessian(chi2))
 
     def chi2_hess_np(x):
-        return np.asarray(chi2_hess_jax(jnp.asarray(x, dtype=jnp.float64)), dtype=np.float64)
+        return np.asarray(chi2_hess_jax(x), dtype=np.float64)
 
-    @jax.jit
-    def constraint_value_jax(fp, fixed_value):
-        return target_func(fitted_params_to_params(fp)) - fixed_value
-
-    @jax.jit
-    def scaled_constraint_value_jax(fp, fixed_value):
-        return constraint_value_jax(fp, fixed_value) / target_scale
-
-    scaled_constraint_grad_jax = jax.jit(jax.grad(lambda fp, fixed_value: scaled_constraint_value_jax(fp, fixed_value)))
-    scaled_constraint_hess_jax = jax.jit(
-        jax.hessian(lambda fp, fixed_value: scaled_constraint_value_jax(fp, fixed_value))
-    )
+    if target_derivatives is None:
+        constraint_value_jax = jax.jit(lambda fp, fixed_value:
+                                     target_func(fitted_params_to_params(fp))-fixed_value)
+        scaled_constraint_value_jax = jax.jit(lambda fp, fixed_value:
+                                             constraint_value_jax(fp, fixed_value)/target_scale)
+        scaled_constraint_grad_jax = jax.jit(jax.grad(scaled_constraint_value_jax))
+        scaled_constraint_hess_jax = jax.jit(jax.hessian(scaled_constraint_value_jax))
+    else:
+        value, gradient, hessian = target_derivatives
+        constraint_value_jax = lambda fp, fixed_value: value(fp)-fixed_value
+        scaled_constraint_value_jax = lambda fp, fixed_value: (value(fp)-fixed_value)/target_scale
+        scaled_constraint_grad_jax = lambda fp, fixed_value: gradient(fp)/target_scale
+        scaled_constraint_hess_jax = lambda fp, fixed_value: hessian(fp)/target_scale
 
     last_x = fp_best.copy()
     diagnostics = []
+
+    def linear_violation(x):
+        if linear_constraint is None:
+            return 0.
+        values = linear_constraint.A @ x
+        return float(max(np.max(linear_constraint.lb-values), np.max(values-linear_constraint.ub), 0.))
 
     def project_start(start, v, tol=cons_tol):
         x = np.asarray(start, dtype=np.float64).copy()
         for _ in range(20):
             if not np.all(np.isfinite(x)):
                 break
-            c = _as_float(scaled_constraint_value_jax(jnp.asarray(x), v))
+            c = _as_float(scaled_constraint_value_jax(x, v))
             if not np.isfinite(c):
                 break
             if abs(c) <= tol:
                 return x
-            g = np.asarray(scaled_constraint_grad_jax(jnp.asarray(x), v), dtype=np.float64)
+            g = np.asarray(scaled_constraint_grad_jax(x, v), dtype=np.float64)
             denom = float(np.dot(g, g))
             if not np.all(np.isfinite(g)) or not np.isfinite(denom) or denom == 0.0:
                 break
@@ -137,19 +148,20 @@ def build_constrained_profile_chi2(
             kwargs = {}
             if exact_hess:
                 kwargs["hess"] = lambda x, multiplier: np.asarray(
-                    multiplier[0] * scaled_constraint_hess_jax(jnp.asarray(x), v),
+                    multiplier[0] * scaled_constraint_hess_jax(x, v),
                     dtype=np.float64,
                 )
             return NonlinearConstraint(
-                fun=lambda x: _as_float(scaled_constraint_value_jax(jnp.asarray(x), v)),
+                fun=lambda x: _as_float(scaled_constraint_value_jax(x, v)),
                 lb=0.0,
                 ub=0.0,
-                jac=lambda x: np.asarray(scaled_constraint_grad_jax(jnp.asarray(x), v), dtype=np.float64),
+                jac=lambda x: np.asarray(scaled_constraint_grad_jax(x, v), dtype=np.float64),
                 **kwargs,
             )
 
         def scaled_violation(x):
-            return abs(_as_float(constraint_value_jax(jnp.asarray(x), v))) / target_scale
+            return max(abs(_as_float(constraint_value_jax(x, v))) / target_scale,
+                       linear_violation(x))
 
         def projected_grad_norm(x):
             gradient = _projected_gradient(x)
@@ -158,10 +170,21 @@ def build_constrained_profile_chi2(
         def _projected_gradient(x):
             x = np.asarray(x, dtype=np.float64)
             g_obj = chi2_grad_np(x)
-            g_con = np.asarray(scaled_constraint_grad_jax(jnp.asarray(x), v), dtype=np.float64)
+            g_con = np.asarray(scaled_constraint_grad_jax(x, v), dtype=np.float64)
             denom = float(np.dot(g_con, g_con))
             if not np.isfinite(denom) or denom == 0.0:
                 return None
+            if linear_constraint is not None:
+                values = linear_constraint.A @ x
+                lower = values-linear_constraint.lb < 1e-7
+                upper = linear_constraint.ub-values < 1e-7
+                normals = np.vstack([-linear_constraint.A[lower], linear_constraint.A[upper]])
+                if len(normals):
+                    matrix = np.column_stack([g_con/np.sqrt(denom), normals.T])
+                    dual = lsq_linear(matrix, -g_obj,
+                                      bounds=(np.r_[-np.inf, np.zeros(len(normals))], np.inf),
+                                      tol=1e-12, max_iter=500)
+                    return g_obj + matrix @ dual.x
             return g_obj - (float(np.dot(g_obj, g_con)) / denom) * g_con
 
         def projected_descent_improvement(x):
@@ -234,7 +257,7 @@ def build_constrained_profile_chi2(
                 return opt_result
             x0 = project_start(opt_result.x, v)
             g_obj = chi2_grad_np(x0)
-            g_con = np.asarray(scaled_constraint_grad_jax(jnp.asarray(x0), v), dtype=np.float64)
+            g_con = np.asarray(scaled_constraint_grad_jax(x0, v), dtype=np.float64)
             denom = float(np.dot(g_con, g_con))
             if not np.isfinite(denom) or denom == 0.0:
                 return opt_result
@@ -245,9 +268,9 @@ def build_constrained_profile_chi2(
                 lam = float(z[-1])
                 stationarity = (
                     chi2_grad_np(x)
-                    + lam * np.asarray(scaled_constraint_grad_jax(jnp.asarray(x), v), dtype=np.float64)
+                    + lam * np.asarray(scaled_constraint_grad_jax(x, v), dtype=np.float64)
                 )
-                return np.r_[stationarity, _as_float(scaled_constraint_value_jax(jnp.asarray(x), v))]
+                return np.r_[stationarity, _as_float(scaled_constraint_value_jax(x, v))]
 
             try:
                 polished = root(residual, np.r_[x0, lambda0], method="hybr", options={"maxfev": 5000})
@@ -299,6 +322,21 @@ def build_constrained_profile_chi2(
 
         def solve_from(x0):
             candidates = []
+            class StationaryPoint(Exception):
+                pass
+
+            iteration = 0
+            def stop_if_stationary(x):
+                nonlocal iteration
+                iteration += 1
+                # SLSQP may chase sub-roundoff function changes for thousands
+                # of iterations after reaching the constrained optimum. Stop
+                # only under stricter feasibility/stationarity thresholds than
+                # result_ok; the ordinary endpoint checks still run afterwards.
+                if scaled_violation(x) <= 1e-9 and projected_grad_norm(x) <= 1e-5:
+                    raise StationaryPoint(OptimizeResult(
+                        x=np.asarray(x).copy(), fun=chi2_np(x), success=True, nit=iteration,
+                        message='Feasible stationary SLSQP point', profile_method='SLSQP-stationarity'))
             # Keep the tested order: SLSQP first, exact-Hessian fallback second.
             for method, enabled, polish in [
                 ("SLSQP", solver_options.use_slsqp, solver_options.polish_slsqp),
@@ -311,12 +349,19 @@ def build_constrained_profile_chi2(
                 if enabled:
                     exact = method == "trust-constr"
                     kwargs = {"hess": chi2_hess_np} if exact else {}
+                    if not exact:
+                        kwargs['callback'] = stop_if_stationary
                     options = ({"gtol": 1e-10, "xtol": 1e-10, "maxiter": 2000} if exact else
                                {"ftol": 1e-10, "maxiter": 2000, **(optimizer_options or {})})
                     try:
+                        constraints = [make_constraint(exact_hess=exact)]
+                        if linear_constraint is not None:
+                            constraints.append(linear_constraint)
                         result = minimize(chi2_np, np.asarray(x0), method=method, jac=chi2_grad_np,
-                                          constraints=[make_constraint(exact_hess=exact)],
+                                          constraints=constraints,
                                           options=options, **kwargs)
+                    except StationaryPoint as completed:
+                        result = completed.args[0]
                     except (FloatingPointError, ValueError, np.linalg.LinAlgError) as exc:
                         result = OptimizeResult(x=np.asarray(x0), fun=chi2_np(x0), success=False,
                                                 message=f"{method} failed: {exc}")
@@ -342,7 +387,7 @@ def build_constrained_profile_chi2(
         else:
             result = min(candidates, key=lambda candidate: candidate.fun if np.isfinite(candidate.fun) else np.inf)
 
-        cviol = abs(_as_float(constraint_value_jax(jnp.asarray(result.x), v)))
+        cviol = abs(_as_float(constraint_value_jax(result.x, v)))
         scaled_cviol = cviol / target_scale
         finite = np.isfinite(result.fun)
         ok = result_ok(result)
@@ -362,6 +407,7 @@ def build_constrained_profile_chi2(
             nit=getattr(result, "nit", None),
             runtime_sec=time.perf_counter() - t_profile_start,
             descent_improvement=getattr(result, "profile_descent_improvement", None),
+            fitted_values=np.asarray(result.x).tolist(),
         )
         diagnostics.append(point)
         profile.last_point = point
@@ -380,36 +426,47 @@ def build_constrained_profile_chi2(
     return profile
 
 
-def build_coordinate_profile_chi2(chi2, param_values, primary_idx, target_name="target"):
+def build_coordinate_profile_chi2(chi2, param_values, primary_idx, target_name="target", covariance=None):
     """Fix one physical coordinate and minimize over the remaining coordinates."""
     base = np.delete(np.asarray(param_values, dtype=float), primary_idx)
-    last = base.copy()
-    value_and_grad = jax.jit(jax.value_and_grad(chi2))
+    last = np.zeros(len(base))
+    value_and_grad = getattr(chi2, 'value_and_grad', None) or jax.jit(jax.value_and_grad(chi2))
     points = []
+    transform = None
 
     def profile(value):
-        nonlocal last
+        nonlocal last, transform
         value = float(value)
         if not len(base):
             result = float(chi2(jnp.array([value])))
-            point = ProfilePoint(value, result, np.isfinite(result), 0.0, "direct")
+            point = ProfilePoint(value, result, np.isfinite(result), 0.0, "direct", fitted_values=[value])
         else:
+            if transform is None:
+                indices = np.delete(np.arange(len(param_values)), primary_idx)
+                curvature = (np.linalg.pinv(np.asarray(covariance)[np.ix_(indices, indices)])
+                             if covariance is not None else
+                             np.asarray(jax.jit(jax.hessian(chi2))(jnp.asarray(param_values)))[np.ix_(indices, indices)]/2)
+                units = 1/np.sqrt(np.maximum(np.abs(np.diag(curvature)), np.finfo(float).tiny))
+                try:
+                    transform = np.diag(units) @ np.linalg.inv(np.linalg.cholesky(curvature*np.outer(units, units))).T
+                except np.linalg.LinAlgError:
+                    transform = np.diag(units)
             def full(nuisance):
-                return jnp.asarray(np.insert(nuisance, primary_idx, value))
+                return np.insert(base + transform @ nuisance, primary_idx, value)
 
             def objective(nuisance):
                 return float(chi2(full(nuisance)))
 
             def objective_gradient(nuisance):
                 val, grad = value_and_grad(full(nuisance))
-                return float(val), np.delete(np.asarray(grad), primary_idx)
+                return float(val), transform.T @ np.delete(np.asarray(grad), primary_idx)
 
             def stationary(fun, x):
                 return np.linalg.norm(objective_gradient(x)[1]) <= 1e-5 * max(abs(fun), 1.0)
 
             starts = [last]
-            if np.linalg.norm(base-last) > 1e-12 * max(np.linalg.norm(base), np.linalg.norm(last), 1.0):
-                starts.append(base)
+            if np.linalg.norm(last) > 1e-12:
+                starts.append(np.zeros(len(base)))
             candidates, messages = [], []
             for start in starts:
                 initial = objective(start)
@@ -446,7 +503,8 @@ def build_coordinate_profile_chi2(chi2, param_values, primary_idx, target_name="
             grad_norm = float(np.linalg.norm(objective_gradient(x)[1]))
             ok = success or grad_norm <= 1e-5*max(abs(fun), 1.0)
             point = ProfilePoint(value, fun, bool(ok), 0.0,
-                                 f"{message}; nuisance_grad_norm={grad_norm:.3g}")
+                                 f"{message}; nuisance_grad_norm={grad_norm:.3g}",
+                                 fitted_values=np.asarray(full(x)).tolist())
             if ok:
                 last = x
         points.append(point)
@@ -458,4 +516,3 @@ def build_coordinate_profile_chi2(chi2, param_values, primary_idx, target_name="
     profile.diagnostics = points
     profile.last_point = None
     return profile
-

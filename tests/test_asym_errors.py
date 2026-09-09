@@ -16,6 +16,15 @@ from pdgfits.asym_errors import (
 from pdgfits.avg import run_avg
 
 
+def test_boundary_endpoint_is_not_forced_to_cross_objective_level():
+    root = find_profile_root(lambda x: (x-.1)**2, .1, 0., -2., 2., limits=(0., np.inf))
+    assert root.lower.endpoint == 0.
+    assert root.lower.is_bound
+    assert root.lower.chi2 < 1
+    assert not root.upper.is_bound
+    assert abs(root.upper.residual) < .005
+
+
 def test_root_rejects_failed_profile_even_when_objective_is_finite():
     class FailedProfile:
         def evaluate(self, value):
@@ -111,7 +120,7 @@ def test_find_profile_root_accepts_explicit_problem_metadata():
     assert root.upper.error == pytest.approx(1.0)
     assert root.lower.error == pytest.approx(1.0)
     assert root.upper.point.method == "callable"
-    assert root.diagnostics()["search_method"] == "bisection"
+    assert root.diagnostics()["search_method"] == "sqrt-secant"
 
 
 def test_constrained_profile_respects_tiny_target_scale():

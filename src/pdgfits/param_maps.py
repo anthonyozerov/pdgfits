@@ -1,6 +1,44 @@
 import numpy as np
 import jax
 import jax.numpy as jnp
+from scipy.optimize import LinearConstraint
+
+
+def covariance_factor(covariance):
+    """A scale map omitting explicitly fixed coordinates."""
+    covariance = np.asarray(covariance, float)
+    active = np.flatnonzero(np.diag(covariance) > 0)
+    sigma = np.sqrt(np.diag(covariance)[active])
+    correlation = covariance[np.ix_(active, active)]/np.outer(sigma, sigma)
+    try:
+        factor = sigma[:, None]*np.linalg.cholesky(correlation)
+    except np.linalg.LinAlgError:
+        factor = np.diag(sigma)
+    result = np.zeros((len(covariance), len(active)))
+    result[active] = factor
+    return result
+
+
+def physical_coordinates(fit):
+    """An affine chart reaching the closed branching-fraction domain exactly."""
+    if fit.get('algorithm') not in ('BR', 'BRU', 'BR (NO MATRIX)', 'BR PRINT'):
+        return None
+    particles, decay = get_decay_info(fit['parameters'])
+    if not len(decay):
+        return None
+    center = np.asarray(fit['param_values'])
+    jac = np.asarray(jax.jacfwd(fit['fitted_params_to_params'])(fit['fitted_values']))
+    covariance = jac@np.asarray(fit['covariance'])@jac.T
+    sum_one = fit['algorithm'] != 'BRU' and len(particles) == 1
+    free = np.delete(np.arange(len(center)), decay[0]) if sum_one else np.arange(len(center))
+    basis = np.eye(len(center))[:, free]
+    if sum_one:
+        basis[decay[0], np.isin(free, decay)] = -1
+    transform = basis@covariance_factor(covariance[np.ix_(free, free)])
+    row_scale = np.maximum(np.linalg.norm(transform[decay], axis=1), np.finfo(float).tiny)
+    bounds = LinearConstraint(transform[decay]/row_scale[:, None],
+                              -center[decay]/row_scale, (1-center[decay])/row_scale)
+    return center, transform, bounds
 
 
 # Keep the original arctan map that Minuit handles well, but shrink fitted-space

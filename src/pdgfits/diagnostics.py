@@ -103,17 +103,19 @@ def meas_sensitivity(fit):
 
     where mu_j is the predicted value for measurement j, sigma_meas_j is the
     average of its asymmetric errors, and sigma_fitted_j is the propagated
-    uncertainty on mu_j from the parameter covariance.
+    uncertainty on mu_j from the parameter covariance. Any fitted input scales
+    are held fixed in this local sensitivity calculation.
 
     Also returns d_params_dy, the full (n_params, n_meas) derivative matrix
     of fitted parameter values with respect to measurements.
     """
-    chi2_open = fit['chi2_open']
+    scales = jnp.asarray(fit.get('input_scales', np.ones(len(fit['meas_df']))))
+    chi2_open = lambda fp, y: fit['chi2_open'](fp, y, scales)
     fitted_values = fit['fitted_values']
     params_opt = fit['param_values']
     meas_df = fit['meas_df']
     covariance = fit['covariance']
-    mu = fit['mu']
+    mu = fit['mu_adjust']
     fitted_params_to_params = fit['fitted_params_to_params']
 
     y = jnp.array(meas_df['value'], dtype=jnp.float64)
@@ -148,7 +150,7 @@ def meas_sensitivity(fit):
     var_mu = jnp.einsum('ij,jk,ik->i', J_mu_fp, covariance, J_mu_fp)
     sigma_fitted = jnp.sqrt(jnp.clip(var_mu, 0.0))
 
-    sigma_meas = (error_n + error_p) / 2
+    sigma_meas = scales * (error_n + error_p) / 2
     sensitivity = d_mu_dy_diag * sigma_meas / sigma_fitted
 
     print(f"\n{'Node':<16} {'Value':>14} {'±Error':>12} {'Sensitivity':>12}")

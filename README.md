@@ -27,14 +27,19 @@ The default backend is the internal PostgreSQL database. It requires the PDG tun
 - `param_maps.py`: bounded branching fractions, sum-to-one coordinates and numerical scales.
 - `fit.py`, `avg.py`: prepare and minimize a joint fit or an average; return plain result dictionaries.
 - `profiles.py`: minimize while holding an arbitrary target, or a direct average coordinate, fixed.
+- `refit.py`, `scalar_average.py`: repeated fits with changed data or errors, and direct scalar averages.
+- `node_scales.py`, `pdg_scaling.py`: general simulation-based node scales and the current PDG scaling prescription.
 - `asym_errors.py`: bracket and verify profile endpoints. `find_profile_root` returns the result directly; `binary_search_error` remains a compatibility wrapper for older experiments.
 - `diagnostics.py`, `plotting.py`: comparisons, sensitivities and optional plots.
 
-Reported profile endpoints satisfy `Q_profile(target) - Q_min = 1`, within the requested objective tolerance. `Q` uses PDG-style interpolation of reported asymmetric errors and an inverse correlation matrix. Treating it as a likelihood ratio with nominal coverage requires a justified statistical model; successful optimization alone does not establish that interpretation.
+Interior profile endpoints satisfy `Q_profile(target) - Q_min = 1`, within the requested objective tolerance. If the confidence set reaches a physical boundary first, the endpoint is flagged with `lower_is_bound` or `upper_is_bound`. `Q` uses PDG-style interpolation of reported asymmetric errors and an inverse correlation matrix. Treating it as a likelihood ratio with nominal coverage requires a justified statistical model; successful optimization alone does not establish that interpretation.
 
-The profile solver retains projected starts, SLSQP, exact-Hessian fallback, KKT polishing, feasibility/stationarity checks and a small feasible-descent check. These safeguards were needed on the recorded difficult cases. The experimental `birge.block_birge` diagnostic is available explicitly but no longer runs or prints rescaled errors automatically for every average.
+The profile solver uses uncertainty-scaled coordinates, shares compiled derivatives across targets, and stops SLSQP once stricter feasibility/stationarity checks are met. It retains projected starts, exact-Hessian fallback, KKT polishing and a feasible-descent check. Direct averages use a scalar search over asymmetric-error pieces; averages with auxiliary inputs use the same residual objective and checked nuisance profiles. The experimental `birge.block_birge` diagnostic is available explicitly but does not print rescaled errors automatically.
 
 ## Validation and provenance
+
+The latest solver changes, measured timings and complete-sweep commands are in
+[the optimization note](notes/optimization.md).
 
 `python -m pytest` runs the offline tests. `python -m pytest --db` opts into the existing database regression tests; use it only with the intended backend and data access.
 
@@ -57,6 +62,26 @@ See [the node-scale note](notes/node-scales.md) for the exact assumptions and
 remaining work. The companion `birge.linear_birge` returns residual diagnostics
 and their variance-mixing matrix for independent nodes or correlated blocks.
 
+For general nonlinear/asymmetric fits, `node_scales.fit_node_scales(fit)`
+estimates each node's expected scale contribution by simulation and refitting.
+It uses an explicit sampling density proportional to the existing `exp(-Q/2)`
+kernel, preserves the measurement relationships, and applies no additional
+precision exclusion. Known full-rank correlations are retained; exactly dependent
+summaries stay on their raw measurement plane. Returned scales, expected
+contributions, Monte Carlo errors and numerical residuals make the approximation
+explicit. The resulting parameter covariance and profiles condition on those
+scales; they do not include scale-estimation uncertainty.
+
+```bash
+python -m pdgfits.run_fits --fit_label 'phi(1020)' --node-scales --scale-draws 512 --calc_asym_errors
+```
+
+The equivalent Python calls are `scaled = fit_node_scales(run_fit(label))` and
+`calc_asym_errors(scaled)`. The API also accepts prepared `run_avg` results.
+The default outer precision uses the strict finite-simulation score equations.
+Monte Carlo standard errors are reported separately from numerical residuals.
+See [general node scaling](notes/general-node-scales.md) for the model and limits.
+
 `pdg_scaling.pdg_average` and `pdg_scaling.pdg_linear_fit` provide comparison
 baselines for the PDG prescriptions. The first includes the existing asymmetric
 average iteration and scale-only exclusion. The second covers linear symmetric
@@ -64,3 +89,9 @@ fits, separate pull scales, one exclusion/refit pass, original-center reporting,
 and the existing nonsingular correlation-block adjustment. Use `exclude_weak=False`
 to compare no exclusions. These are explicit comparator APIs, not automatic changes
 to the main fitting pipeline. See [the method note](notes/node-scales.md).
+
+`pdg_scaling.pdg_fit_scales(fit, exclude_weak=False)` applies the PDG scaling
+pass to a general Python fit. It returns the original fit and the final refit
+separately, so original-center and refitted-center reporting can be compared.
+It implements the scale prescription on the Python objective; it does not claim
+to port every legacy Fortran asymmetric-error propagation step.

@@ -6,6 +6,9 @@ from typing import Callable
 import jax
 from jax import numpy as jnp
 import numpy as np
+from scipy.optimize import linprog
+from pdgfits.build_chi2 import build_chi2
+from pdgfits.param_maps import covariance_factor, get_decay_info, physical_coordinates
 from pdgfits.profiles import (
     ProfilePoint, ProfileSolverOptions, build_constrained_profile_chi2,
     build_coordinate_profile_chi2,
@@ -80,6 +83,7 @@ class ProfileEndpoint:
     residual: float
     point: ProfilePoint
     counts: dict
+    is_bound: bool = False
 
     def diagnostics(self) -> dict:
         return {
@@ -88,6 +92,7 @@ class ProfileEndpoint:
             f"{self.side}_residual": self.residual,
             f"{self.side}_error": self.error,
             f"{self.side}_profile_point": _profile_point_dict(self.point),
+            f"{self.side}_is_bound": self.is_bound,
         }
 
 
@@ -148,6 +153,7 @@ def find_profile_root(
     verbose=False,
     residual_tol=5e-3,
     contract_brackets=True,
+    limits=(-np.inf, np.inf),
 ):
     """Find and verify profile-likelihood endpoints for an explicit problem."""
     t_root_start = time.perf_counter()
@@ -200,6 +206,12 @@ def find_profile_root(
         side = "upper" if upper else "lower"
         fixed = lo if upper else hi
         moving = hi if upper else lo
+        boundary = limits[1] if upper else limits[0]
+        moving = min(moving, boundary) if upper else max(moving, boundary)
+
+        def boundary_endpoint(point):
+            return ProfileEndpoint(side, boundary, abs(boundary-val), point.chi2,
+                                   point.chi2-target, point, side_counts[side].copy(), True)
 
         def bracket_eval(inner, outer):
             """Evaluate an outward bracket point, contracting if it is unreachable.
@@ -235,24 +247,35 @@ def find_profile_root(
         n_expand = 0
         moving, moving_point = bracket_eval(fixed, moving)
         while moving_point.chi2 < target and n_expand < max_iter:
+            if moving == boundary:
+                return boundary_endpoint(moving_point)
             n_expand += 1
             inner = moving
             moving = val + 2.0 * (moving - val)
+            moving = min(moving, boundary) if upper else max(moving, boundary)
             moving, moving_point = bracket_eval(inner, moving)
         if n_expand == max_iter:
             raise ValueError(f"Expanding {'ub' if upper else 'lb'} failed after {max_iter} iterations")
         lo2, hi2 = (fixed, moving) if upper else (moving, fixed)
+        qlo, qhi = (float(chi2_min), moving_point.chi2) if upper else (moving_point.chi2, float(chi2_min))
         mid = None
         mid_point = None
         for _ in range(max_iter):
-            mid = 0.5 * (lo2 + hi2)
+            # sqrt(Delta Q) is linear for a quadratic profile. Interpolate in
+            # that coordinate, retaining the bracket and a bisection safeguard.
+            left = np.sqrt(max(qlo-float(chi2_min), 0.))
+            right = np.sqrt(max(qhi-float(chi2_min), 0.))
+            fraction = (1-left)/(right-left) if right != left else .5
+            if not .001 < fraction < .999:
+                fraction = .5
+            mid = lo2 + fraction*(hi2-lo2)
             mid_point = checked_point(mid, side=side, phase="bisect")
             if mid_point.chi2 < target:
-                if upper: lo2 = mid
-                else: hi2 = mid
+                if upper: lo2, qlo = mid, mid_point.chi2
+                else: hi2, qhi = mid, mid_point.chi2
             else:
-                if upper: hi2 = mid
-                else: lo2 = mid
+                if upper: hi2, qhi = mid, mid_point.chi2
+                else: lo2, qlo = mid, mid_point.chi2
             if abs(mid_point.chi2 - target) <= residual_tol:
                 break
         endpoint = mid
@@ -284,7 +307,7 @@ def find_profile_root(
         target_chi2=target,
         upper=upper,
         lower=lower,
-        search_method="bisection",
+        search_method="sqrt-secant",
         function_evals=eval_counts["function_evals"],
         cache_hits=eval_counts["cache_hits"],
         side_counts=side_counts,
@@ -316,7 +339,75 @@ def binary_search_error(
 
 
 binary_search_error.last_diagnostics = None
+
+
+def _cached_value_and_grad(function):
+    """Share a solver's value and derivative call at exactly the same point."""
+    last_x, last_result = None, None
+    def evaluate(x):
+        nonlocal last_x, last_result
+        if last_x is None or not np.array_equal(x, last_x):
+            last_result = tuple(np.asarray(v) for v in function(x))
+            last_x = np.array(x, copy=True)
+        return last_result
+    return evaluate
 binary_search_error.last_root = None
+
+
+def _physical_profile_chart(fit):
+    """Replace open sigmoid/softmax coordinates by their closed physical domain.
+
+    A sum-to-one fit uses an affine basis with one dependent fraction. This
+    reaches zero exactly and introduces no penalty approximation.
+    """
+    parameters = fit['parameters']
+    particles, decay = get_decay_info(parameters)
+    chart = physical_coordinates(fit)
+    if chart is None:
+        return None
+    center, transform, bounds = chart
+    sum_one = fit['algorithm'] != 'BRU' and len(particles) == 1
+    mapping = jax.jit(lambda z: jnp.asarray(center) + jnp.asarray(transform) @ z)
+    data = fit['meas_df']
+    chi2, _, _, opened = build_chi2(jnp.asarray(data['value'].to_numpy()), fit['mu_adjust'],
+                               jnp.asarray(data['error_n'].to_numpy()), jnp.asarray(data['error_p'].to_numpy()),
+                               jnp.linalg.pinv(fit['corr_mat']), mapping)
+    # Rebuilding a scaled fit must retain its input scales.
+    if 'input_scales' in fit:
+        chi2 = jax.jit(lambda z: opened(z, jnp.asarray(data['value'].to_numpy()), fit['input_scales']))
+    limits = {parameters[i]: (0., 1.) for i in decay}
+    bounded = set(limits)
+    for node in fit['nodes']:
+        rows = fit['rel_df'][fit['rel_df'].node == node]
+        keys = set(rows['parameter_key'])
+        if (not keys <= bounded or rows['coeff_parameter_key'].notna().any()
+                or np.any(rows['coefficient'].astype(float) < 0)):
+            continue
+        limits[node] = (0., np.inf)
+        kind = fit['fit_df'].set_index('node').loc[node, 'type']
+        if kind == '/':
+            terms = np.zeros((2, len(center)))
+            for _, row in rows.iterrows():
+                terms[int(row.summation)-1, parameters.index(row.parameter_key)] = float(row.coefficient)
+            numerator, denominator = terms
+            positive = denominator > 0
+            # A ratio of nonnegative linear forms is a weighted average of
+            # their coefficient ratios when the numerator has no extra terms.
+            if positive.any() and np.all(numerator[~positive] == 0):
+                ratios = numerator[positive]/denominator[positive]
+                limits[node] = (float(ratios.min()), float(ratios.max()))
+        if kind == '+':
+            coefficients = np.zeros(len(center))
+            for _, row in rows.iterrows():
+                coefficients[parameters.index(row.parameter_key)] = float(row.coefficient)
+            aeq = np.isin(np.arange(len(center)), decay)[None, :].astype(float) if sum_one else None
+            kwargs = {'bounds': [(0, 1) if i in decay else (None, None) for i in range(len(center))],
+                      'A_eq': aeq, 'b_eq': [1.] if sum_one else None}
+            low = linprog(coefficients, **kwargs)
+            high = linprog(-coefficients, **kwargs)
+            if low.success and high.success:
+                limits[node] = (float(low.fun), float(-high.fun))
+    return chi2, mapping, np.zeros(transform.shape[1]), np.eye(transform.shape[1]), bounds, limits
 
 
 def calc_asym_errors(fit, targets=None):
@@ -325,47 +416,111 @@ def calc_asym_errors(fit, targets=None):
     fitted_params_to_params = fit['fitted_params_to_params']
     fitted_values = fit['fitted_values']; param_values = fit['param_values']
     chi2 = fit['chi2']; chi2_min = fit['chi2_min']; covariance = fit['covariance']
+    chart = _physical_profile_chart(fit) if 'mu_adjust' in fit and covariance is not None else None
+    linear_constraint, limits = None, {}
+    if chart is not None:
+        chi2, fitted_params_to_params, fitted_values, covariance, linear_constraint, limits = chart
+    # Profile in approximately unit-uncertainty coordinates. The original
+    # physical map and objective remain unchanged; only the optimizer's chart
+    # changes. Zero-variance coordinates include Minuit's fixed softmax gauge.
+    if covariance is not None and chart is None:
+        transform = jnp.asarray(covariance_factor(covariance))
+        center = jnp.asarray(fitted_values)
+        original_chi2, original_map = chi2, fitted_params_to_params
+        chi2 = jax.jit(lambda z: original_chi2(center + transform @ z))
+        fitted_params_to_params = jax.jit(lambda z: original_map(center + transform @ z))
+        fitted_values = jnp.zeros(transform.shape[1])
+        covariance = np.eye(transform.shape[1])
     if targets is None:
         targets = sorted(list(set(parameters) | set(nodes)))
-    J = jax.jacobian(fitted_params_to_params)(fitted_values)
-    param_cov = J @ covariance @ J.T if covariance is not None else None
-    chi2_grad_jax = jax.jit(jax.grad(chi2))
-    chi2_hess_jax = jax.jit(jax.hessian(chi2))
-    base_chi2 = float(chi2(jnp.asarray(fitted_values, dtype=jnp.float64)))
-    if base_chi2 > chi2_min + 1e-5:
-        raise RuntimeError(f'chi2 at fitted optimum {base_chi2} > chi2_min {chi2_min}')
-    results = {}
+    functions = []
+    valid_targets = []
     for target in targets:
-        print(target)
         if target in nodes:
-            target_func = node_funcs[nodes.index(target)]
+            functions.append(node_funcs[nodes.index(target)])
         elif target in parameters:
-            target_func = parameter_funcs[parameters.index(target)]
+            functions.append(parameter_funcs[parameters.index(target)])
         else:
             print(f'Warning: {target} not found in nodes or parameters, skipping.')
             continue
-        target_value = float(target_func(param_values))
-        if param_cov is not None:
-            J_target = jax.jacobian(target_func)(param_values)
-            target_std = float(jnp.sqrt(J_target @ param_cov @ J_target.T))
+        valid_targets.append(target)
+    if not functions:
+        return {}
+    # Compile values and derivatives together for the entire target list.
+    # A runtime target index reuses the Hessian compilation on hard fallbacks.
+    def target_vector(fp):
+        params = fitted_params_to_params(fp)
+        return jnp.stack([function(params) for function in functions])
+    target_values = jax.jit(target_vector)
+    target_jacobian = jax.jit(jax.jacfwd(target_vector))
+    target_hessian = jax.jit(jax.hessian(lambda fp, index: target_vector(fp)[index]))
+    target_value_grad = jax.jit(jax.value_and_grad(lambda fp, index: target_vector(fp)[index]))
+    centers = np.asarray(target_values(fitted_values))
+    target_jac = np.asarray(target_jacobian(fitted_values))
+    chi2_grad_jax = jax.jit(jax.grad(chi2))
+    chi2_hess_jax = jax.jit(jax.hessian(chi2))
+    chi2_value_and_grad = _cached_value_and_grad(jax.jit(jax.value_and_grad(chi2)))
+    base_chi2 = float(chi2(jnp.asarray(fitted_values, dtype=jnp.float64)))
+    if base_chi2 > chi2_min + 1e-5:
+        raise RuntimeError(f'chi2 at fitted optimum {base_chi2} > chi2_min {chi2_min}')
+    mapped = np.asarray(fitted_params_to_params(fitted_values))
+    if not np.allclose(mapped, np.asarray(param_values), rtol=1e-10, atol=1e-14):
+        raise RuntimeError('Profile coordinate map changed the fitted parameters')
+    if 'mu_adjust' in fit:
+        check_prediction = jax.jit(fit['mu_adjust'])
+        measurement_precision = np.linalg.pinv(fit['corr_mat'])
+    results = {}
+    for index, (target, target_func) in enumerate(zip(valid_targets, functions)):
+        print(target)
+        target_value = float(centers[index])
+        if target in limits and limits[target][0] == limits[target][1]:
+            results[target] = {'value': target_value, 'error_n': 0., 'error_p': 0.,
+                               'lower_endpoint': target_value, 'upper_endpoint': target_value,
+                               'lower_residual': -1., 'upper_residual': -1.,
+                               'lower_is_bound': True, 'upper_is_bound': True,
+                               'search_method': 'constant target'}
+            continue
+        if covariance is not None:
+            target_std = float(np.sqrt(target_jac[index] @ covariance @ target_jac[index]))
         else:
             target_std = max(abs(target_value), 1.0) * 1e-3
         if not np.isfinite(target_std) or target_std <= 0:
             target_std = max(abs(target_value), 1.0) * 1e-3
+        target_evaluate = _cached_value_and_grad(lambda fp, i=index: target_value_grad(fp, i))
         profile_chi2 = build_constrained_profile_chi2(
             chi2, fitted_params_to_params, target_func, fitted_values,
             target_scale=target_std, target_name=target,
             chi2_grad_jax=chi2_grad_jax,
             chi2_hess_jax=chi2_hess_jax,
+            chi2_value_and_grad=chi2_value_and_grad,
+            linear_constraint=linear_constraint,
+            target_derivatives=(lambda fp, evaluate=target_evaluate: float(evaluate(fp)[0]),
+                                lambda fp, evaluate=target_evaluate: evaluate(fp)[1],
+                                lambda fp, i=index: np.asarray(target_hessian(fp, i))),
         )
-        base_value = float(target_func(fitted_params_to_params(fitted_values)))
-        if abs(base_value - target_value) > 1e-8 * max(abs(target_value), 1.0):
-            raise RuntimeError(f'target value mismatch at fitted optimum {base_value} != {target_value}')
         lb = target_value - 2 * target_std
         ub = target_value + 2 * target_std
-        root_result = find_profile_root(profile_chi2, target_value, chi2_min, lb, ub)
+        root_result = find_profile_root(profile_chi2, target_value, chi2_min, lb, ub,
+                                        limits=limits.get(target, (-np.inf, np.inf)))
         upper_err, lower_err = root_result.upper.error, root_result.lower.error
         diag = root_result.diagnostics()
+        for side, endpoint in [('upper', root_result.upper), ('lower', root_result.lower)]:
+            if endpoint.point.fitted_values is not None:
+                physical = np.asarray(fitted_params_to_params(jnp.asarray(endpoint.point.fitted_values)))
+                diag[f'{side}_parameters'] = physical.tolist()
+                if 'mu_adjust' in fit:
+                    measurements = fit['meas_df']
+                    scales = np.asarray(fit.get('input_scales', np.ones(len(measurements))))
+                    residual = measurements['value'].to_numpy()-np.asarray(check_prediction(physical))
+                    lower = measurements['error_n'].to_numpy()*scales
+                    upper = measurements['error_p'].to_numpy()*scales
+                    sigma = np.clip((2*lower*upper-residual*(upper-lower))/(lower+upper),
+                                    np.minimum(lower, upper), np.maximum(lower, upper))
+                    normalized = residual/sigma
+                    checked_q = float(normalized @ measurement_precision @ normalized)
+                    if abs(checked_q-endpoint.chi2) > 1e-7*max(abs(checked_q), 1.):
+                        raise RuntimeError(f'Independent physical-coordinate objective check failed for {target}')
+                    diag[f'{side}_checked_chi2'] = checked_q
         results[target] = {"value": target_value, "error_p": upper_err, "error_n": lower_err, **diag}
         print(f'{target}: {Decimal(target_value):.5E} + {Decimal(upper_err):.2E} - {Decimal(lower_err):.2E} residuals=({diag["upper_residual"]:.2g},{diag["lower_residual"]:.2g})')
     return results

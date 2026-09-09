@@ -36,10 +36,11 @@ node may supply no information about its scale; an optimum at the floor is not
 proof that its quoted uncertainty is correct. A successful bounded optimization
 is a stationarity check, not a global-optimum theorem.
 
-The existing `run_avg`, `run_fit` and asymmetric profile behavior is unchanged.
-Do not silently substitute an observed Hessian or fitted asymmetric covariance
-into the exact expectation argument. Nonlinear means, active constraints and
-asymmetric errors require a further statistical choice and calibration.
+These scale routines remain opt-in. Do not substitute an observed Hessian or
+fitted asymmetric covariance into the exact expectation argument. The separate
+[general implementation](general-node-scales.md) makes an explicit sampling
+choice for nonlinear means, active constraints and asymmetric errors. Interval
+calibration remains a further statistical question.
 
 Checks cover ordinary Birge recovery, independent nodes with different scales,
 correlated inputs without correlation reversal, expected residual mixing,
