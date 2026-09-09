@@ -1,4 +1,8 @@
 import os
+import pickle
+import re
+from hashlib import sha1
+from pathlib import Path
 import warnings
 import numpy as np
 
@@ -8,12 +12,77 @@ import pandas as pd
 
 from pdgfits.parser import parse_measurement, get_scale
 
+SNAPSHOT_BACKEND = "snapshot"
+SNAPSHOT_DIR_ENV = "PDGFITS_SNAPSHOT_DIR"
+DATA_BACKEND_ENV = "PDGFITS_DATA_BACKEND"
+
+
+def _data_backend():
+    return os.getenv(DATA_BACKEND_ENV, "db").strip().lower()
+
+
+def _using_snapshot():
+    return _data_backend() == SNAPSHOT_BACKEND
+
+
+def _snapshot_dir():
+    root = os.getenv(SNAPSHOT_DIR_ENV)
+    if not root:
+        raise RuntimeError(
+            f"{SNAPSHOT_DIR_ENV} must be set when {DATA_BACKEND_ENV}=snapshot"
+        )
+    return Path(root)
+
+
+def _snapshot_key(value):
+    """Return a readable, collision-resistant filename stem for snapshot data."""
+    value = str(value)
+    slug = re.sub(r"[^A-Za-z0-9._-]+", "_", value).strip("_") or "empty"
+    digest = sha1(value.encode("utf-8")).hexdigest()[:10]
+    return f"{slug[:80]}-{digest}"
+
+
+def _nuisance_corr_key(nuisance_params):
+    stripped = sorted(p.removeprefix("nuisance_") for p in nuisance_params)
+    return _snapshot_key("\0".join(stripped))
+
+
+def _sql_quote_list(values):
+    quoted = []
+    for value in values:
+        escaped = str(value).replace("'", "''")
+        quoted.append(f"'{escaped}'")
+    return ", ".join(quoted)
+
+
+def _read_snapshot_pickle(*parts):
+    path = _snapshot_dir().joinpath(*parts)
+    if not path.exists():
+        rel = path.relative_to(_snapshot_dir())
+        raise FileNotFoundError(
+            f"Snapshot data not found: {rel}. Re-capture the snapshot with this "
+            "fit/node included."
+        )
+    with open(path, "rb") as f:
+        return pickle.load(f)
+
+
+def _write_snapshot_pickle(obj, *parts):
+    path = _snapshot_dir().joinpath(*parts)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "wb") as f:
+        pickle.dump(obj, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+
 def make_conn():
     load_dotenv()
     conn = psycopg2.connect(host="127.0.0.1", port=5433, dbname=os.getenv("DB_NAME"), user=os.getenv("DB_USER"), password=os.getenv("DB_PW"))
     return conn
 
 def all_fits():
+    if _using_snapshot():
+        return _read_snapshot_pickle("all_fits.pkl")
+
     conn = make_conn()
     QUERY = f"""
     SELECT * FROM fit_control1
@@ -25,6 +94,9 @@ def all_fits():
     return fits_df
 
 def fit_queries(fit_label, verbose=True):
+    if _using_snapshot():
+        return _read_snapshot_pickle("fits", f"{_snapshot_key(fit_label)}.pkl")
+
     conn = make_conn()
 
     # suppress pandas sqlalchemy warning
@@ -60,11 +132,12 @@ def fit_queries(fit_label, verbose=True):
     # print(list(fit_df[fit_df['type'].isna()]['node']))
     fit_df['type'] = fit_df['type'].fillna('+') # TODO: IS THIS RIGHT??
     nodes = list(fit_df["node"])
+    nodes_sql = _sql_quote_list(nodes)
 
     QUERY = f"""
     SELECT tree.node, tree.data_type
     FROM tree
-    WHERE tree.node IN ('{'\', \''.join(nodes)}')
+    WHERE tree.node IN ({nodes_sql})
     """
     if verbose:
         print(QUERY)
@@ -74,7 +147,7 @@ def fit_queries(fit_label, verbose=True):
     QUERY = f"""
     SELECT r.node, r.par_code, r.parameter, r.coefficient, r.summation, r.coeff_par_code, r.coeff_parameter
     FROM relationship r
-    WHERE r.node IN ('{'\', \''.join(nodes)}')
+    WHERE r.node IN ({nodes_sql})
     AND r.alias_flag IS NULL
     """
     if verbose:
@@ -95,7 +168,7 @@ def fit_queries(fit_label, verbose=True):
     LEFT JOIN units u ON m.node = u.node
     LEFT JOIN reference r ON m.reference_id = r.reference_id
     LEFT JOIN ignore_minus im ON m.node = im.node
-    WHERE m.node IN ('{'\', \''.join(nodes)}')
+    WHERE m.node IN ({nodes_sql})
     AND m.place = 'U'
     AND m.publication_status IS NULL
     AND m.fit_flag IS NULL
@@ -115,7 +188,7 @@ def fit_queries(fit_label, verbose=True):
     QUERY = f"""
     SELECT c.node_one, c.reference_id_one, c.occurrence_one, c.node_two, c.reference_id_two, c.occurrence_two, c.correlation
     FROM correlation c
-    WHERE c.node_one IN ('{'\', \''.join(nodes)}') AND c.node_two IN ('{'\', \''.join(nodes)}')
+    WHERE c.node_one IN ({nodes_sql}) AND c.node_two IN ({nodes_sql})
     AND c.publication_status IS NULL
     """
     if verbose:
@@ -133,6 +206,9 @@ def fit_queries(fit_label, verbose=True):
     return algorithm, measurement_type, fit_df, rel_df, meas_df, corr_df, fit_seed_df, tree_df
 
 def avg_queries(verbose=True):
+    if _using_snapshot():
+        return _read_snapshot_pickle("avg_queries.pkl")
+
     conn = make_conn()
 
     # suppress pandas sqlalchemy warning
@@ -166,12 +242,13 @@ def avg_queries(verbose=True):
     avg_df = pd.read_sql_query(QUERY, conn)
 
     nodes = list(avg_df['node'].unique())
+    nodes_sql = _sql_quote_list(nodes)
 
     # get the correlation coefficients between the measurements
     QUERY = f"""
     SELECT c.node_one, c.reference_id_one, c.occurrence_one, c.node_two, c.reference_id_two, c.occurrence_two, c.correlation
     FROM correlation c
-    WHERE c.node_one IN ('{'\', \''.join(nodes)}') AND c.node_two=c.node_one
+    WHERE c.node_one IN ({nodes_sql}) AND c.node_two=c.node_one
     AND c.publication_status IS NULL
     """
     if verbose:
@@ -186,12 +263,18 @@ def avg_queries(verbose=True):
 
 
 def nuisance_corr(nuisance_params, verbose=True):
+    if _using_snapshot():
+        return _read_snapshot_pickle(
+            "nuisance_corr", f"{_nuisance_corr_key(nuisance_params)}.pkl"
+        )
+
     nuisance_params = [p.removeprefix('nuisance_') for p in nuisance_params]
+    nuisance_params_sql = _sql_quote_list(nuisance_params)
     conn = make_conn()
     QUERY = f"""
     SELECT par_code_row, parameter_row, par_code_column, parameter_column, coefficient
     FROM fit_correlation_matrix
-    WHERE concat_ws('.', par_code_row, parameter_row) IN ('{'\', \''.join(nuisance_params)}') AND concat_ws('.', par_code_column, parameter_column) IN ('{'\', \''.join(nuisance_params)}')
+    WHERE concat_ws('.', par_code_row, parameter_row) IN ({nuisance_params_sql}) AND concat_ws('.', par_code_column, parameter_column) IN ({nuisance_params_sql})
     AND type NOT LIKE 'DR'
     """
     if verbose:
@@ -201,6 +284,13 @@ def nuisance_corr(nuisance_params, verbose=True):
 
 # function to get the PDG's values for a node
 def pdg_value(node):
+    if _using_snapshot():
+        raise RuntimeError(
+            "pdg_value() is not stored in simple snapshots; use "
+            "pdg_most_precise_value(), or extend the capture if raw summaries "
+            "are needed."
+        )
+
     node_split = node.split('.')
     if len(node_split) == 1:
         par_code = None
@@ -246,6 +336,11 @@ def pdg_value(node):
 
 # function to get the PDG's most precise value for a node
 def pdg_most_precise_value(node):
+    if _using_snapshot():
+        return _read_snapshot_pickle(
+            "pdg_most_precise_value", f"{_snapshot_key(node)}.pkl"
+        )
+
     summary_df, unit_text = pdg_value(node)
     if len(summary_df) == 0:
         return None, None, None

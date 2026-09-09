@@ -2,9 +2,39 @@ import itertools
 import numpy as np
 import pandas as pd
 from itertools import permutations, combinations
-from pdgfits.parser import parse_measurement, br_adjust_node, get_scale, parameter_key, get_dep_meas_data, get_adjust_data, measurement_string
+from pdgfits.parser import parse_measurement, get_scale, parameter_key, get_dep_meas_data, get_adjust_data
 from pdgfits.query import pdg_most_precise_value, nuisance_corr
 from collections import defaultdict
+
+# ---------------------------------------------------------------------------
+# Domain constants
+#
+# These node lists encode PDG-specific special cases. They were previously
+# inlined inside preprocess(); they are named here so the logic that consumes
+# them reads cleanly and so the constants are easy to audit/extend.
+# ---------------------------------------------------------------------------
+
+# If any of these nodes is present (or measurement_type == 'UNIV'), the
+# universality / particle-antiparticle equality handling kicks in.
+UNIVERSALITY_TRIGGER_NODES = ['S024DM', 'S024DTT', 'S022DM']
+
+# Fake measurement nodes that should be removed and replaced by directly
+# equating the two underlying parameters (e-mu universality; omega-/antiomega+
+# and Xi-/antiXi+ mass and lifetime equality).
+UNIVERSALITY_FAKE_NODES = [
+    'S013L0U', 'S013LPD', 'S013LQD', 'S013MVD', 'S010L0U',
+    'S024DM', 'S024DTT', 'S022DM',
+]
+
+# Nodes whose equation type is stored as 'G+' but should be treated as '+'.
+EQ_TYPE_FORCE_PLUS = [
+    'S013EPH', 'S013EP', 'S023D', 'S085DM', 'S086DM', 'S087DM',
+    'S024DM', 'S024DTT',
+]
+
+# Equation types whose nodes are partial widths that sum into a total width.
+PARTIAL_WIDTH_EQ_TYPES = ['G+', 'G*', 'R+']
+
 
 # function to parse measurement strings
 # first, if needed, for a br_adjust measurement that was scaled by the original authors,
@@ -60,30 +90,37 @@ def organize_triplet_clump(rel_df_clump):
         node: frozenset(g.groupby('parameter')['coefficient'].sum().items())
         for node, g in rel_df_clump.groupby('node')
     }
-    
+
     # Reverse lookup: vector -> node name
     by_vec = {v: n for n, v in nodes.items()}
-    
+
     def sub(a, b):
         d = dict(a)
         for p, c in b:
             d[p] = d.get(p, 0) - c
         return frozenset((p, c) for p, c in d.items() if c != 0)
-    
+
     for x, y in permutations(nodes, 2):
         d = by_vec.get(sub(nodes[x], nodes[y]))
         if d and d not in (x, y):
             return {'X': x, 'Y': y, 'D': d}
     raise ValueError("No triplet clump found")
 
-def preprocess(fit_df, rel_df, meas_df, corr_df, fit_seed_df, tree_df, algorithm, measurement_type):
 
-    # remove fake measurements for e-mu universality and omega- - antiomega+ mass and lifetime equality,
-    # replacing them with a direct relationship between the two parameters
-    if measurement_type == 'UNIV' or any([n in list(meas_df['node']) for n in ['S024DM', 'S024DTT', 'S022DM']]):
-        fake_nodes = ['S013L0U', 'S013LPD', 'S013LQD', 'S013MVD', 'S010L0U', 'S024DM', 'S024DTT', 'S022DM']
+# ---------------------------------------------------------------------------
+# preprocess() steps
+#
+# Each helper below is one self-contained transformation that preprocess()
+# applies in sequence. They take and return the dataframes they touch; nothing
+# is hidden in shared state. preprocess() at the bottom is the thin orchestrator.
+# ---------------------------------------------------------------------------
 
-        fake_nodes_in_fit = [node for node in fake_nodes if node in list(rel_df['node'])]
+def _equate_universality_pairs(rel_df, meas_df, fit_seed_df, measurement_type):
+    """Remove fake measurements for e-mu universality and omega-/antiomega+ and
+    Xi-/antiXi+ mass/lifetime equality, replacing each with a direct relationship
+    between the two underlying parameters."""
+    if measurement_type == 'UNIV' or any([n in list(meas_df['node']) for n in UNIVERSALITY_TRIGGER_NODES]):
+        fake_nodes_in_fit = [node for node in UNIVERSALITY_FAKE_NODES if node in list(rel_df['node'])]
         for node in fake_nodes_in_fit:
             pair = list(rel_df['parameter'][rel_df['node'] == node].unique())
             if pair == ['S022M', 'S022M1']:
@@ -109,13 +146,22 @@ def preprocess(fit_df, rel_df, meas_df, corr_df, fit_seed_df, tree_df, algorithm
             # remove the pair[0] node from fit_seed_df
             fit_seed_df = fit_seed_df[fit_seed_df['parameter'] != pair[0]]
 
+    return rel_df, meas_df, fit_seed_df
 
-    # handle dep_meas
+
+def _extract_dep_meas(meas_df):
+    """Pull dep_meas offsets out of measurement strings, storing them in
+    dep_meas_data and replacing each string with its actual value."""
     dep_meas_data = [get_dep_meas_data(m) for m in meas_df['measurement']]
     for i, row in meas_df.iterrows():
         if 'dep_meas' in row['measurement']:
             meas_df.loc[i, 'measurement'] = row['measurement'].split(':')[1].split(',')[0].strip()
+    return meas_df, dep_meas_data
 
+
+def _parse_measurements(meas_df):
+    """Parse measurement strings into value/error columns, take absolute values
+    for ignore_minus nodes, and extract br_adjust adjustment data."""
     # parse the measurement strings into values and positive and negative errors
     meas_df['value'], meas_df['error_p'], meas_df['error_n'], meas_df['last_err'], adjustments = zip(*meas_df['measurement'].map(unadjust_measurement))
     meas_df['error'] = (meas_df['error_p'] + meas_df['error_n']) / 2
@@ -127,30 +173,36 @@ def preprocess(fit_df, rel_df, meas_df, corr_df, fit_seed_df, tree_df, algorithm
         meas_df['value'] = np.where(meas_df['ignore_minus'].notna(), np.abs(meas_df['value']), meas_df['value'])
     # parse the information about br_adjust
     adjust_data = [get_adjust_data(a) for a in adjustments]
+    return meas_df, adjust_data
 
 
-    # standardize the units of the measurements (e.g. multiply measurements of eV by 10^{-6} to get MeV)
-    # (this is needed for e.g. partial widths that sum up to a total width)
-    # TODO: this is maybe incomplete
-    # print('units:', list(meas_df['text'].unique()))
+def _apply_unit_scaling(meas_df):
+    """Standardize units (e.g. eV -> MeV) by scaling values and errors.
 
+    Needed for e.g. partial widths that sum up to a total width.
+    TODO: this is maybe incomplete.
+    """
     meas_df['scale'] = meas_df.apply(lambda row: get_scale(row['text']), axis=1)
     meas_df['value'] *= meas_df['scale']
     meas_df['error_p'] *= meas_df['scale']
     meas_df['error_n'] *= meas_df['scale']
     meas_df['error'] *= meas_df['scale']
-    
+    return meas_df
 
 
-    # go through the fit_df and handle some special cases
+def _force_plus_eq_types(fit_df):
+    """Override the equation type of nodes stored as 'G+' that should be '+' (???)."""
     for i, fit_df_row in fit_df.iterrows():
-        # handle some nodes which have equation type 'G+' but should be '+' (???)
-        if fit_df_row['node'] in ['S013EPH', 'S013EP', 'S023D', 'S085DM', 'S086DM', 'S087DM', 'S024DM', 'S024DTT']:
+        if fit_df_row['node'] in EQ_TYPE_FORCE_PLUS:
             fit_df.loc[i, 'type'] = '+'
-        
-        # If the node is a lifetime node, put in a relationship lifetime=1/width,
-        # and put in a fit seed for the width node based on the lifetime seed
-        # (we will use the width as the fitted parameter, not the lifetime)
+    return fit_df
+
+
+def _add_lifetime_relations(fit_df, rel_df, fit_seed_df, algorithm):
+    """For each lifetime node (data_type 'T'), insert a relationship lifetime=1/width
+    and seed the width parameter from the lifetime seed (the width is the fitted
+    parameter, not the lifetime)."""
+    for i, fit_df_row in fit_df.iterrows():
         if fit_df_row['data_type'] == 'T' and algorithm != 'SPECIALT':
             lifetime_node = fit_df_row['node']
             print('Lifetime node found:', lifetime_node)
@@ -176,20 +228,24 @@ def preprocess(fit_df, rel_df, meas_df, corr_df, fit_seed_df, tree_df, algorithm
             fit_seed_df = pd.concat([fit_seed_df, pd.DataFrame([row])], ignore_index=True)
             # remove the row with the lifetime node from the fit_seed_df
             fit_seed_df = fit_seed_df[fit_seed_df['parameter'] != lifetime_node]
-        
+    return fit_df, rel_df, fit_seed_df
+
+
+def _add_partial_width_relations(fit_df, rel_df, tree_df):
+    """Add relationships between partial widths and total widths.
+
+    Each partial-width-to-width relationship is represented as an additional row
+    in the relationship table: node = partial width, parameter = width, in a new
+    summation (which contains only the one total width parameter).
+    """
     # get all nodes corresponding to widths, and check that each particle only has one
     width_nodes = list(tree_df[tree_df['data_type'] == 'G']['node'])
     width_node_particles = list([node[:4] for node in width_nodes])
     assert len(width_node_particles) == len(set(width_node_particles)), f"At least one particle with multiple widths: {width_nodes}"
-        
-    # Add in the relationships between partial widths and widths.
-    # We represent these as an additional row in the relationship table,
-    # with the node being the partial width, the parameter being the width,
-    # and the summation being a new summation in the equation (which will only
-    # contain the one total width parameter)
+
     for node in rel_df['node'].unique():
         eq_type = fit_df[fit_df['node'] == node]['type'].iloc[0]
-        if eq_type in ['G+', 'G*', 'R+']:
+        if eq_type in PARTIAL_WIDTH_EQ_TYPES:
             data_type = tree_df[tree_df['node'] == node]['data_type'].iloc[0]
             assert pd.isna(data_type) or data_type == 'E', f"Node {node} has data type {data_type}, expected partial width"
             # print(node)
@@ -202,8 +258,12 @@ def preprocess(fit_df, rel_df, meas_df, corr_df, fit_seed_df, tree_df, algorithm
             row = dict(node=node, parameter=width_node, coefficient=1, summation=max_summation+1, parameter_key=width_node,
                     par_code=None, coeff_par_code=None, coeff_parameter=None, coeff_parameter_key=None)
             rel_df = pd.concat([rel_df, pd.DataFrame([row])], ignore_index=True)
+    return rel_df
 
-    # make keys for the parameters/nodes. e.g. 'S013.1', 'S013M'.
+
+def _build_parameter_keys(rel_df, fit_seed_df):
+    """Make keys for parameters/nodes (e.g. 'S013.1', 'S013M') and collect the
+    lists of parameters (from fit_seed_df) and nodes (from rel_df)."""
     rel_df['parameter_key'] = rel_df.apply(lambda row: parameter_key(row['par_code'], row['parameter']), axis=1)
     rel_df['coeff_parameter_key'] = rel_df.apply(lambda row: parameter_key(row['coeff_par_code'], row['coeff_parameter']), axis=1)
     fit_seed_df['parameter_key'] = fit_seed_df.apply(lambda row: parameter_key(row['par_code'], row['parameter']), axis=1)
@@ -211,7 +271,14 @@ def preprocess(fit_df, rel_df, meas_df, corr_df, fit_seed_df, tree_df, algorithm
     # parameters are anything in fit_seed_df. nodes are the nodes in rel_df.
     parameters = list(fit_seed_df['parameter_key'].unique())
     nodes = list(rel_df['node'].unique())
+    return rel_df, fit_seed_df, parameters, nodes
 
+
+def _add_nuisance_parameters(rel_df, meas_df, corr_df, fit_seed_df, adjust_data, dep_meas_data, parameters, nodes):
+    """Add nuisance parameters for br_adjust / coefficient / dep_meas target
+    nodes that are referenced but not themselves in the fit. Each gets a fake
+    measurement from the most precise PDG value, plus any correlations between
+    nuisance parameters from the fit correlation matrix."""
     # get what the nodes are for br_adjust and coeff_parameters
     # if they are not in the fit, we will add them as nuisance parameters
     adjust_nodes = list(itertools.chain.from_iterable([data[0] for data in adjust_data if data is not None]))
@@ -236,7 +303,11 @@ def preprocess(fit_df, rel_df, meas_df, corr_df, fit_seed_df, tree_df, algorithm
     nuisance_params = []
 
     # add nuisance parameters for any nodes that are not in the fit
-    for node in set(adjust_nodes_not_in_fit + coeff_nodes_not_in_fit + dep_meas_nodes_not_in_fit):
+    # NOTE: sorted() (rather than a bare set) so the order in which nuisance rows
+    # are appended is deterministic across runs. The previous bare-set iteration
+    # produced a non-reproducible row order in meas_df/fit_seed_df; this is purely
+    # a representational fix (results are invariant to measurement ordering).
+    for node in sorted(set(adjust_nodes_not_in_fit + coeff_nodes_not_in_fit + dep_meas_nodes_not_in_fit)):
         nuisance_node = f'nuisance_{node}'
         nuisance_params.append(nuisance_node)
         print('adding nuisance parameter:', nuisance_node)
@@ -250,7 +321,7 @@ def preprocess(fit_df, rel_df, meas_df, corr_df, fit_seed_df, tree_df, algorithm
         # this fake measurement has no adjustment or dep_meas
         adjust_data.append(None)
         dep_meas_data.append(None)
-    
+
     # add correlations between nuisance parameters
     if len(nuisance_params) > 0:
         nuisance_corr_df = nuisance_corr(nuisance_params, verbose=False)
@@ -272,7 +343,15 @@ def preprocess(fit_df, rel_df, meas_df, corr_df, fit_seed_df, tree_df, algorithm
             # add to corr_df
             corr_df = pd.concat([corr_df, nuisance_corr_df], ignore_index=True)
 
-    # handle triplets of measurements that are handled by COMER2
+    return meas_df, corr_df, fit_seed_df, adjust_data, dep_meas_data
+
+
+def _add_clump2_correlations(meas_df, rel_df, corr_df):
+    """Handle triplets of measurements handled by COMER2 (systematic_error_clump2).
+
+    For each triplet of nodes X, Y, D such that D = X - Y, infer the three
+    pairwise correlations from the three reported errors and add them to corr_df.
+    """
     clumps = list(meas_df['systematic_error_clump2'][meas_df['systematic_error_clump2'].notna()].unique())
     for clump in clumps:
         print('clump:', clump)
@@ -338,8 +417,13 @@ def preprocess(fit_df, rel_df, meas_df, corr_df, fit_seed_df, tree_df, algorithm
             'correlation': [corrXY, corrXD, corrYD]
         }
         corr_df = pd.concat([corr_df, pd.DataFrame(extra_corr)], ignore_index=True)
-    
-    # handle systematic_error_clump
+    return corr_df
+
+
+def _add_clump_correlations(meas_df, corr_df):
+    """Handle systematic_error_clump: add pairwise correlations between
+    measurements of one node that share a systematic error (assumed 100%
+    correlated)."""
     clumps = list(meas_df['systematic_error_clump'][meas_df['systematic_error_clump'].notna()].unique())
     for clump in clumps:
         print('Handling systematic_error_clump:', clump)
@@ -349,23 +433,23 @@ def preprocess(fit_df, rel_df, meas_df, corr_df, fit_seed_df, tree_df, algorithm
         clump_nodes = list(meas_df_clump['node'].unique())
         assert len(clump_nodes) == 1, f"Code assumes that each systematic_error_clump has only one node in the fit"
         node = clump_nodes[0]
-    
+
         print('Node in this clump:', node)
         print('Measurements in this clump:', len(meas_df_clump))
-    
+
         syst_err = np.array(meas_df_clump['last_err'])
         total_err = np.array(meas_df_clump['error'])
         ref = np.array(meas_df_clump['reference_id'])
         occ = np.array(meas_df_clump['occurrence'])
 
         corr_df_vals = corr_df[['node_one', 'node_two', 'reference_id_one', 'reference_id_two', 'occurrence_one', 'occurrence_two']].values.tolist()
-    
+
         # for every pair of measurements, calculate their correlation, and add it to corr_df
         for (i,j) in combinations(range(len(meas_df_clump)), 2):
             # check that there is no entry in corr_df with these nodes
             if (node, node, ref[i], occ[i], ref[j], occ[j]) in corr_df_vals or (node, node, ref[j], occ[j], ref[i], occ[i]) in corr_df_vals:
                 raise ValueError(f"Correlation between systematic error clump measurements {i} and {j} already exists in the correlation table. Not supported.")
-            
+
             # calculate the correlation between this pair of measurements
             # assumption: the systematic error in both measurements is 100% correlated
             cov_syst_ij = 1*(syst_err[i])*(syst_err[j])
@@ -384,5 +468,31 @@ def preprocess(fit_df, rel_df, meas_df, corr_df, fit_seed_df, tree_df, algorithm
                 'correlation': [corr_ij]
             }
             corr_df = pd.concat([corr_df, pd.DataFrame(extra_corr)], ignore_index=True)
+    return corr_df
+
+
+def preprocess(fit_df, rel_df, meas_df, corr_df, fit_seed_df, tree_df, algorithm, measurement_type):
+    """Turn raw query results into the dataframes the fitter consumes.
+
+    Each step is a named helper (see above); this is just the pipeline.
+    """
+    rel_df, meas_df, fit_seed_df = _equate_universality_pairs(
+        rel_df, meas_df, fit_seed_df, measurement_type)
+
+    meas_df, dep_meas_data = _extract_dep_meas(meas_df)
+    meas_df, adjust_data = _parse_measurements(meas_df)
+    meas_df = _apply_unit_scaling(meas_df)
+
+    fit_df = _force_plus_eq_types(fit_df)
+    fit_df, rel_df, fit_seed_df = _add_lifetime_relations(fit_df, rel_df, fit_seed_df, algorithm)
+    rel_df = _add_partial_width_relations(fit_df, rel_df, tree_df)
+
+    rel_df, fit_seed_df, parameters, nodes = _build_parameter_keys(rel_df, fit_seed_df)
+
+    meas_df, corr_df, fit_seed_df, adjust_data, dep_meas_data = _add_nuisance_parameters(
+        rel_df, meas_df, corr_df, fit_seed_df, adjust_data, dep_meas_data, parameters, nodes)
+
+    corr_df = _add_clump2_correlations(meas_df, rel_df, corr_df)
+    corr_df = _add_clump_correlations(meas_df, corr_df)
 
     return fit_df, rel_df, meas_df, corr_df, fit_seed_df, dep_meas_data, adjust_data

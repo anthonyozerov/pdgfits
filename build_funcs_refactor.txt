@@ -1,0 +1,96 @@
+Plan: vectorize mu(params) in build_funcs.py
+==============================================
+
+Goal
+----
+Replace the Python loop in get_mu (which unrolls into N separate dot-product
+ops in the XLA graph) with a batched matrix-vector multiply for the common
+linear case, while preserving correctness for nonlinear equation types.
+
+Background
+----------
+chi2 in build_chi2.py is @jax.jit. When traced, it inlines through mu(params),
+which in turn unrolls [meas_func(params) for meas_func in meas_funcs] into N
+individual XLA ops. For the common '+' case with all-zero coeff_params, each
+op is just dot(params, coefficients[i]) — equivalent to one row of C @ params
+for coefficient matrix C. Fusing these into a single matmul cuts N kernel
+launches to 1 and gives XLA/BLAS a much larger unit of work to optimize.
+
+
+Step 1: classify nodes at build time
+-------------------------------------
+In get_node_funcs (or a new helper), after building coefficients/coeff_params
+per node, record whether the node is "linear-simple":
+
+  linear_simple = (equation_type == '+') and (all coeff_params entries == 0)
+
+Return two lists alongside node_funcs:
+  - linear_node_indices: positions in the nodes list that are linear-simple
+  - linear_coeff_matrix: 2D array, shape (len(linear_nodes), len(parameters)),
+    stacking coefficients[0] for each linear-simple node
+
+Non-linear nodes (any other equation type, or '+' with non-zero coeff_params)
+keep their func_factory-produced callables as today.
+
+
+Step 2: new get_mu signature
+-----------------------------
+get_mu gains awareness of the split:
+
+  def get_mu(meas_funcs, linear_node_indices, linear_coeff_matrix,
+             node_to_meas_indices, n_meas):
+
+Where node_to_meas_indices maps each linear node to the list of measurement
+rows that reference it (a measurement may share a node with others).
+
+Internally, build a permutation so the output can be assembled correctly.
+
+
+Step 3: new mu(params) implementation
+---------------------------------------
+  def mu(params):
+      out = jnp.empty(n_meas)
+
+      # Batch: all linear-simple nodes in one matmul
+      linear_vals = linear_coeff_matrix @ params   # (n_linear_nodes,)
+      # scatter linear_vals into the right measurement slots
+      out = out.at[linear_meas_indices].set(linear_vals[linear_node_map])
+
+      # Remainder: nonlinear nodes evaluated individually
+      for i, meas_func in nonlinear_meas_funcs:
+          out = out.at[i].set(meas_func(params))
+
+      return out
+
+linear_meas_indices and linear_node_map are precomputed integer arrays
+(constants in the XLA graph), so the scatter is a constant-index update.
+
+
+Step 4: apply the same split to translate_dep and adjust
+----------------------------------------------------------
+Both functions have the same Python-loop pattern. Audit whether their
+constituent operations can similarly be batched (likely yes for translate_dep,
+which is a linear combination of node/parameter values).
+
+
+Step 5: verify correctness
+---------------------------
+- Existing pytest suite (pytest tests/) should pass unchanged.
+- For a handful of fits, assert jnp.allclose(mu_new(params), mu_old(params)).
+- Run a full fit and compare chi2_min against the pre-refactor value.
+
+
+Risks / edge cases
+------------------
+- parameter_funcs (params[i]) are already O(1) and don't need batching; they
+  can stay in the nonlinear remainder or be folded into the matrix as a
+  standard basis row.
+- Measurements that share a node: multiple rows of meas_funcs may point to the
+  same node function. The scatter step must handle repeated node indices
+  (each gets the same linear_val — this is a gather, not a reduction).
+- adjust and translate_dep depend on node values too; if those nodes are moved
+  to the batched path, make sure their values are still accessible.
+- XLA compile time: the unrolled loop currently produces a large but flat XLA
+  graph; the matmul version produces a smaller graph but may change compile
+  time in either direction. Measure both wall-clock fit time and first-call
+  (compile) time.

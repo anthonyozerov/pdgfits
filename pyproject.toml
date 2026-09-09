@@ -18,6 +18,7 @@ dependencies = [
 
 [project.scripts]
 pdgfits = "pdgfits.run_fits:main"
+pdgfits-snapshot = "pdgfits.snapshot:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

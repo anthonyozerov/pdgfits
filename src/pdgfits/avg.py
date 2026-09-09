@@ -12,24 +12,21 @@ from jax import numpy as jnp
 from iminuit import Minuit
 
 from pdgfits.preprocess import preprocess
-from pdgfits.build_funcs import get_mu_vectorized, get_translate_dep, get_adjust, get_node_funcs, get_parameter_funcs
+from pdgfits.build_funcs import get_mu_vectorized, get_translate_dep, get_adjust, get_node_funcs, get_parameter_funcs, get_mu_adjust
 from pdgfits.corr_mat import get_corr_mat
 from pdgfits.build_chi2 import build_chi2
-from pdgfits.asym_errors import binary_search_error
-from pdgfits.plotting import plot_mnmatrix
+from pdgfits.asym_errors import CallableProfileProblem, ProfilePoint, binary_search_error, symmetrize
+from pdgfits.birge import block_birge
 
 
-def run_avg(node, meas_df_node, corr_df_node, skip_avg=False, contours=False, contours_dir=None):
+def run_avg(node, meas_df_node, corr_df_node, skip_avg=False, contours=False, contours_dir=None, corr_floor=0.0):
     """
     Run a weighted average for a single node.
 
-    Returns a dict with keys:
-        node, status, parameters, nodes,
-        param_values, chi2_min, n_meas, covariance,
-        meas_df, rel_df, fit_df
-    On failure: node, status, error.
+    Returns a dict with the same keys as run_fit(); keys not applicable to
+    averages (label, algorithm, covariance, fit_valid, hesse_accurate) are None.
     """
-    print(node)
+    print(node + '-'*20)
     meas_df_node = meas_df_node.copy()
     for col in ('systematic_error_clump', 'systematic_error_clump2'):
         if col in meas_df_node.columns:
@@ -60,6 +57,7 @@ def run_avg(node, meas_df_node, corr_df_node, skip_avg=False, contours=False, co
     parameter_funcs = get_parameter_funcs(parameters)
     translate_dep = get_translate_dep(dep_meas_data, parameters, nodes_list, parameter_funcs, node_funcs)
     adjust = get_adjust(adjust_data, parameters, nodes_list, parameter_funcs, node_funcs)
+    mu_adjust = get_mu_adjust(mu, adjust, translate_dep)
 
     # Use the mean of the main node's parsed measurements as the starting seed
     fit_seed_df.loc[fit_seed_df['parameter_key'] == node, 'seed'] = np.nan
@@ -77,16 +75,17 @@ def run_avg(node, meas_df_node, corr_df_node, skip_avg=False, contours=False, co
     error_p = jnp.array(meas_df['error_p'], dtype=jnp.float64)
 
     corr_mat = get_corr_mat(meas_df, corr_df)
+    if corr_floor > 0.0:
+        off_diag = 1.0 - jnp.eye(corr_mat.shape[0])
+        corr_mat = jnp.maximum(corr_mat, corr_floor * off_diag)
     corr_mat_inv = jnp.linalg.pinv(corr_mat)
 
-    chi2, chi2_grad, chi2_val, _ = build_chi2(
-        y, mu, error_n, error_p, corr_mat_inv,
+    chi2, chi2_grad, chi2_val, chi2_open = build_chi2(
+        y, mu_adjust, error_n, error_p, corr_mat_inv,
         lambda x: x,
-        translate_dep=translate_dep,
-        adjust=adjust,
         use_jit=True,
     )
-    chi2_val_and_grad = jax.value_and_grad(chi2)
+    chi2_val_and_grad = jax.jit(jax.value_and_grad(chi2))
 
     param_init = np.array(
         [fit_seed_df[fit_seed_df['parameter_key'] == p]['seed'].iloc[0] for p in parameters],
@@ -129,34 +128,164 @@ def run_avg(node, meas_df_node, corr_df_node, skip_avg=False, contours=False, co
     primary_idx = parameters.index(node)
     val = float(param_values[primary_idx])
 
-    # Profile chi2 over nuisance parameters at a fixed value of the primary node.
-    # For the common 1-parameter case this is just a direct evaluation.
-    def profile_chi2(x_primary):
-        if len(parameters) == 1:
-            return chi2_val(jnp.array([x_primary], dtype=jnp.float64))
-        else:
-            x0_nuisance = np.delete(param_values, primary_idx)
-            def obj(x_nuisance):
-                x = np.insert(x_nuisance, primary_idx, x_primary)
-                return chi2_val(jnp.array(x, dtype=jnp.float64))
-            def grad(x_nuisance):
-                x = np.insert(x_nuisance, primary_idx, x_primary)
-                return np.delete(chi2_grad(jnp.array(x, dtype=jnp.float64)), primary_idx)
-            # result = scipy_minimize(fun=obj, x0=x0_nuisance, jac=grad)
-            result = scipy_minimize(fun=obj, x0=x0_nuisance, method='Nelder-Mead', options={'maxiter': 1000, 'fatol': 1e-4, 'xatol': np.inf})
-            assert result.success, f"Profile chi2 minimization failed for node {node}. \n{result}"
-            return float(result.fun)
+    error = symmetrize(y, mu_adjust(param_values), error_n, error_p)
+    # print(meas_df['node'])
+    all_nodes = list(meas_df['node'].unique())
+    node_idx = all_nodes.index(node)
+    blocks = [np.where(meas_df['node'] == node)[0] for node in all_nodes]
+    # print(blocks)
+    chi2_b, exp_chi2_b, birge_b = block_birge(y, corr_mat_inv, error, param_values, chi2, mu_adjust, jax.hessian(chi2), blocks)
+    print(birge_b[node_idx])
 
     # Use heuristic measurement spans as the initial bracket for the binary search.
-    ub = val + max(4*(adjust(param_values)*meas_df['error_p'])[meas_df['node'] == node])
-    lb = val - max(4*(adjust(param_values)*meas_df['error_n'])[meas_df['node'] == node])
-    err_scale = (ub - lb) / 2
+    primary_mask = meas_df['node'] == node
+    primary_error_p = np.asarray((adjust(param_values)*meas_df['error_p'])[primary_mask], dtype=np.float64)
+    primary_error_n = np.asarray((adjust(param_values)*meas_df['error_n'])[primary_mask], dtype=np.float64)
+    ub = val + 4 * float(np.max(primary_error_p))
+    lb = val - 4 * float(np.max(primary_error_n))
+
+    # Averages target a direct primary parameter. Fix that coordinate explicitly
+    # and minimize over nuisance coordinates; this avoids equality-constraint
+    # scaling and path-dependence for tiny lifetime/branching-ratio averages.
+    profile_diagnostics = []
+    base_nuisance = np.delete(param_values, primary_idx)
+    last_nuisance = base_nuisance.copy()
+
+    def profile_chi2(x_primary):
+        nonlocal last_nuisance
+        x_primary = float(x_primary)
+        if len(parameters) == 1:
+            x = np.array([x_primary], dtype=np.float64)
+            prof_chi2 = float(chi2_val(jnp.array(x, dtype=jnp.float64)))
+            point = ProfilePoint(x_primary, prof_chi2, True, 0.0, "direct")
+            profile_diagnostics.append(point)
+            profile_chi2.last_point = point
+            return prof_chi2
+
+        def full_params(x_nuisance):
+            return np.insert(np.asarray(x_nuisance, dtype=np.float64), primary_idx, x_primary)
+
+        def obj(x_nuisance):
+            return float(chi2_val(jnp.array(full_params(x_nuisance), dtype=jnp.float64)))
+
+        def obj_and_grad(x_nuisance):
+            val_jax, grad_jax = chi2_val_and_grad(jnp.array(full_params(x_nuisance), dtype=jnp.float64))
+            return float(val_jax), np.delete(np.asarray(grad_jax, dtype=np.float64), primary_idx)
+
+        def grad(x_nuisance):
+            return obj_and_grad(x_nuisance)[1]
+
+        starts = [last_nuisance]
+        if np.linalg.norm(base_nuisance - last_nuisance) > 1e-12 * max(np.linalg.norm(base_nuisance), np.linalg.norm(last_nuisance), 1.0):
+            starts.append(base_nuisance)
+
+        candidates = []
+        messages = []
+        for start in starts:
+            start = np.asarray(start, dtype=np.float64)
+            start_fun = obj(start)
+            if np.isfinite(start_fun):
+                candidates.append((start_fun, start, True, "feasible start"))
+            run_nelder_mead = True
+            try:
+                bfgs = scipy_minimize(
+                    fun=obj_and_grad,
+                    x0=start,
+                    jac=True,
+                    method='BFGS',
+                    options={'maxiter': max(1000, 500 * len(start)), 'gtol': 1e-8},
+                )
+                messages.append(f"BFGS success={bfgs.success}: {bfgs.message}")
+                if np.isfinite(bfgs.fun):
+                    bfgs_x = np.asarray(bfgs.x, dtype=np.float64)
+                    candidates.append((float(bfgs.fun), bfgs_x, bool(bfgs.success), str(bfgs.message)))
+                    if bfgs.success:
+                        run_nelder_mead = False
+                    else:
+                        bfgs_grad_norm = float(np.linalg.norm(grad(bfgs_x)))
+                        if bfgs_grad_norm <= 1e-5 * max(abs(float(bfgs.fun)), 1.0):
+                            run_nelder_mead = False
+            except Exception as exc:  # noqa: BLE001 - fallback below records failure
+                messages.append(f"BFGS exception: {type(exc).__name__}: {exc}")
+
+            if run_nelder_mead:
+                nm_start = candidates[-1][1] if candidates else start
+                xatol = max(np.linalg.norm(nm_start) * 1e-10, np.finfo(float).eps)
+                try:
+                    nm = scipy_minimize(
+                        fun=obj,
+                        x0=nm_start,
+                        method='Nelder-Mead',
+                        options={
+                            'maxiter': max(1000, 500 * len(start)),
+                            'xatol': xatol,
+                            'fatol': 1e-8,
+                            'adaptive': True,
+                        },
+                    )
+                    messages.append(f"Nelder-Mead success={nm.success}: {nm.message}")
+                    if np.isfinite(nm.fun):
+                        candidates.append((float(nm.fun), np.asarray(nm.x, dtype=np.float64), bool(nm.success), str(nm.message)))
+                except Exception as exc:  # noqa: BLE001 - handled by candidate check
+                    messages.append(f"Nelder-Mead exception: {type(exc).__name__}: {exc}")
+
+        if not candidates:
+            raise RuntimeError(f"Profile chi2 minimization failed for node {node}: {'; '.join(messages)}")
+
+        min_fun = min(c[0] for c in candidates)
+        fun_tol = max(1e-6, 1e-8 * abs(min_fun))
+        successful_ties = [c for c in candidates if c[2] and c[0] <= min_fun + fun_tol]
+        if successful_ties:
+            best_fun, best_x, best_success, best_message = min(successful_ties, key=lambda c: c[0])
+        else:
+            best_fun, best_x, best_success, best_message = min(candidates, key=lambda c: c[0])
+        nuisance_grad_norm = float(np.linalg.norm(grad(best_x)))
+        ok = bool(best_success or nuisance_grad_norm <= 1e-5 * max(abs(best_fun), 1.0))
+        point = ProfilePoint(
+            x_primary,
+            best_fun,
+            ok,
+            0.0,
+            f"{best_message}; nuisance_grad_norm={nuisance_grad_norm:.3g}",
+        )
+        profile_diagnostics.append(point)
+        profile_chi2.last_point = point
+        if not ok:
+            raise RuntimeError(
+                f"Profile chi2 minimization failed for node {node}: "
+                f"best_fun={best_fun}, nuisance_grad_norm={nuisance_grad_norm}, messages={'; '.join(messages)}"
+            )
+        last_nuisance = best_x
+        return best_fun
+
+    profile_chi2.diagnostics = profile_diagnostics
+    profile_chi2.last_point = None
+    # The MLE point is feasible for the fixed-primary profile at val. Endpoint
+    # verification below exercises the profile solver where it matters.
+    base_chi2 = float(chi2_val(jnp.array(param_values, dtype=jnp.float64)))
+    if base_chi2 > chi2_min + 1e-5:
+        raise RuntimeError(
+            f"Chi2 at fitted optimum for node {node} is {base_chi2}, "
+            f"above chi2_min {chi2_min}"
+        )
+
+    # err_scale = (ub - lb) / 2
 
     t2 = time.perf_counter()
+    profile_problem = CallableProfileProblem(
+        profile_chi2=profile_chi2,
+        target_name=node,
+        target_value=val,
+        chi2_min=chi2_min,
+        lower_initial=lb,
+        upper_initial=ub,
+    )
     error_p_result, error_n_result = binary_search_error(
-        profile_chi2, val, chi2_min, err_scale, lb, ub
+        profile_problem, val, chi2_min, lb, ub, verbose=False
     )
     t3 = time.perf_counter()
+
+    print(birge_b[node_idx]*error_n_result, birge_b[node_idx]*error_p_result)
 
 
     if contours:
@@ -169,20 +298,37 @@ def run_avg(node, meas_df_node, corr_df_node, skip_avg=False, contours=False, co
         t5 = time.perf_counter()
         print(f'minuit: {(t5-t4)*1000:.1f} ms')
         filepath = os.path.join(contours_dir, f'{node}.png') if contours_dir is not None else None
+        from pdgfits.plotting import plot_mnmatrix
         plot_mnmatrix(m, filepath=filepath)
 
     print(f'optimization {(t1-t0)*1000:.1f} ms, error estimation {(t3-t2)*1000:.1f} ms')
 
     return {
         'node': node,
+        'label': None,
+        'algorithm': None,
         'parameters': parameters,
         'nodes': nodes_list,
         'param_values': param_values,
+        'fitted_values': param_values,  # identity param map, so same as param_values
         'chi2_min': chi2_min,
         'n_meas': int(len(meas_df_node)),
         'error_n': error_n_result,
         'error_p': error_p_result,
+        'asym_error_diagnostics': binary_search_error.last_diagnostics,
+        'profile_diagnostics': profile_chi2.diagnostics,
+        'chi2': chi2,
+        'chi2_open': chi2_open,
+        'chi2_grad': chi2_grad,
+        'fitted_params_to_params': lambda x: x,
+        'params_to_fitted_params': lambda x: x,
+        'node_funcs': node_funcs,
+        'parameter_funcs': parameter_funcs,
+        'mu': mu,
         'meas_df': meas_df,
         'rel_df': rel_df,
         'fit_df': fit_df,
+        'covariance': None,
+        'fit_valid': None,
+        'hesse_accurate': None,
     }

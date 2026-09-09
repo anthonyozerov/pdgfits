@@ -205,3 +205,17 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Local golden fixtures for preprocess characterization tests (regenerate from DB)
+tests/fixtures/preprocess/
+
+# Local DB query snapshots for offline experiments (regenerate from DB)
+data/pdg-snapshot/
+
+# other
+src/pdg_fortran_fit_code
+SCIENTIFIC_CONTEXT.md
+
+# Local transfer source and experiment logs
+pdgfits-remote/
+notes/logs/

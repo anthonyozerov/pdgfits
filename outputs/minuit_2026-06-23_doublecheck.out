@@ -1,0 +1,1020 @@
+====================================================================================================
+G(2000),G(1800)
+algorithm: MASS
+2 parameters, 1 nodes, 2 particles
+Parameters: K002M, K003M
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 1.74E+0
+chi2 obtained by PDG: 1.74E+0
+====================================================================================================
+Illustrative key
+algorithm: BR (NO MATRIX)
+2 parameters, 3 nodes, 1 particles
+Parameters: K001.1, K001.2
+particles with decays: ['K001']
+normalizing K001 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 4.85E+0
+chi2 obtained by PDG: 4.85E+0
+====================================================================================================
+tauhflav
+skipping tauhflav
+====================================================================================================
+eta^'(958)
+algorithm: BR
+br_adjust nodes: [np.str_('M070.84'), np.str_('S014.1'), np.str_('S041.248')]
+br_adjust nodes not in fit: [np.str_('M070.84'), np.str_('S014.1'), np.str_('S041.248')]
+coeff nodes not in fit: ['S014.101', 'S014.102']
+adding nuisance parameter: nuisance_M070.84
+adding nuisance parameter: nuisance_S014.1
+adding nuisance parameter: nuisance_S014.101
+adding nuisance parameter: nuisance_S014.102
+adding nuisance parameter: nuisance_S041.248
+14 parameters, 32 nodes, 1 particles
+Parameters: M002.1, M002.2, M002.6, M002.7, M002.8, M002.9, M002W, M002.121, M002.10, nuisance_M070.84, nuisance_S014.1, nuisance_S014.101, nuisance_S014.102, nuisance_S041.248
+particles with decays: ['M002']
+normalizing M002 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 6.96E+1
+chi2 obtained by PDG: 6.95E+1
+====================================================================================================
+phi(1020)
+algorithm: BR
+br_adjust nodes: [np.str_('M001.1'), np.str_('M004.4')]
+br_adjust nodes not in fit: [np.str_('M001.1')]
+adding nuisance parameter: nuisance_M001.1
+15 parameters, 30 nodes, 1 particles
+Parameters: M004.1, M004.2, M004.4, M004.24, M004.20, M004.7, M004.5, M004.8, M004.6, M004.194, M004.15, M004.23, M004.19, M004.25, nuisance_M001.1
+particles with decays: ['M004']
+normalizing M004 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 8.93E+1
+chi2 obtained by PDG: 8.93E+1
+====================================================================================================
+f_2(1270)
+algorithm: BR
+8 parameters, 12 nodes, 1 particles
+Parameters: M005.1, M005.2, M005.3, M005.4, M005.7, M005.9, M005W, M005.8
+particles with decays: ['M005']
+normalizing M005 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 8.23E+1
+chi2 obtained by PDG: 8.23E+1
+====================================================================================================
+f_1(1285)
+algorithm: BR
+5 parameters, 11 nodes, 1 particles
+Parameters: M008.1, M008.13, M008.21, M008.4, M008.5
+particles with decays: ['M008']
+normalizing M008 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 2.40E+1
+chi2 obtained by PDG: 2.40E+1
+====================================================================================================
+K_2^*(1430)
+algorithm: BR
+8 parameters, 11 nodes, 1 particles
+Parameters: M022.1, M022.2, M022.3, M022.4, M022.5, M022.6, M022.8, M022W1
+particles with decays: ['M022']
+normalizing M022 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 2.11E+1
+chi2 obtained by PDG: 2.11E+1
+====================================================================================================
+K0l3 lin form fact
+algorithm: SPECIAL
+for node S013L0U assuring universality, removing fake meas, and directly equating the two parameters ['S013L+M', 'S013L+E']
+2 parameters, 1 nodes, 1 particles
+Parameters: S013L+E, S013L0
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 1.62E+1
+chi2 obtained by PDG: 1.62E+1
+====================================================================================================
+f_2^'(1525)
+algorithm: BR
+5 parameters, 8 nodes, 1 particles
+Parameters: M013.1, M013.2, M013.4, M013.8, M013WX
+particles with decays: ['M013']
+normalizing M013 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 1.42E+1
+chi2 obtained by PDG: 1.42E+1
+====================================================================================================
+rho_3(1690)
+algorithm: BR
+4 parameters, 5 nodes, 1 particles
+Parameters: M015.1, M015.2, M015.3, M015.4
+particles with decays: ['M015']
+normalizing M015 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 1.47E+1
+chi2 obtained by PDG: 1.47E+1
+====================================================================================================
+K^*(892) neutral
+algorithm: BR
+3 parameters, 2 nodes, 1 particles
+Parameters: M018.4, M018W2, M018.12
+particles with decays: ['M018']
+normalizing M018 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 6.84E+1
+chi2 obtained by PDG: 6.84E+1
+====================================================================================================
+K0mu3 lin form fact
+algorithm: SPECIAL
+2 parameters, 0 nodes, 1 particles
+Parameters: S013L0, S013L+M
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 1.32E+1
+chi2 obtained by PDG: 1.32E+1
+====================================================================================================
+K(1)(1270)
+algorithm: SPECIAL
+2 parameters, 3 nodes, 1 particles
+Parameters: M028.2, M028.1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 4.93E+0
+chi2 obtained by PDG: 4.93E+0
+====================================================================================================
+pi_2(1670)
+algorithm: BR
+4 parameters, 5 nodes, 1 particles
+Parameters: M034.8, M034.2, M034.11, M034.5
+particles with decays: ['M034']
+normalizing M034 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 1.90E+0
+chi2 obtained by PDG: 1.90E+0
+====================================================================================================
+Upsilon-1S
+algorithm: SPECIAL
+2 parameters, 3 nodes, 1 particles
+Parameters: M049.6, M049.12
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 3.77E+0
+chi2 obtained by PDG: 3.77E+0
+====================================================================================================
+Upsilon(2S)
+algorithm: BRU
+br_adjust nodes: [np.str_('M048.8')]
+br_adjust nodes not in fit: [np.str_('M048.8')]
+adding nuisance parameter: nuisance_M048.8
+3 parameters, 3 nodes, 1 particles
+Parameters: M052.6, M052.4, nuisance_M048.8
+particles with decays: ['M052']
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 1.18E+1
+chi2 obtained by PDG: 1.18E+1
+====================================================================================================
+K_3^*(1780)
+algorithm: BR
+4 parameters, 4 nodes, 1 particles
+Parameters: M060.6, M060.1, M060.2, M060.3
+particles with decays: ['M060']
+normalizing M060 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 1.70E-2
+chi2 obtained by PDG: 1.70E-2
+====================================================================================================
+D^*(2010)+
+algorithm: BR
+3 parameters, 3 nodes, 1 particles
+Parameters: M062.2, M062.3, M062.1
+particles with decays: ['M062']
+normalizing M062 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 3.26E-1
+chi2 obtained by PDG: 3.26E-1
+====================================================================================================
+K^*(1680)
+algorithm: BR
+3 parameters, 4 nodes, 1 particles
+Parameters: M095.1, M095.2, M095.3
+particles with decays: ['M095']
+normalizing M095 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 2.94E+0
+chi2 obtained by PDG: 2.95E+0
+====================================================================================================
+f_0(1510)
+algorithm: BR
+5 parameters, 6 nodes, 1 particles
+Parameters: M152.1, M152.2, M152.7, M152.8, M152.4
+particles with decays: ['M152']
+normalizing M152 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 5.65E+0
+chi2 obtained by PDG: 5.65E+0
+====================================================================================================
+K_S
+algorithm: BR
+4 parameters, 6 nodes, 1 particles
+Parameters: S012.11, S012.12, S012.1, S012.2
+particles with decays: ['S012']
+normalizing S012 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 5.88E-1
+chi2 obtained by PDG: 5.88E-1
+====================================================================================================
+K0/K+- masses
+algorithm: MASS
+2 parameters, 1 nodes, 2 particles
+Parameters: S010M, S011M
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 2.97E+1
+chi2 obtained by PDG: 2.97E+1
+====================================================================================================
+K0l3 form factors
+algorithm: SPECIAL
+for node S013LPD assuring universality, removing fake meas, and directly equating the two parameters ['S013LPM', 'S013LPE']
+for node S013LQD assuring universality, removing fake meas, and directly equating the two parameters ['S013LQM', 'S013LQE']
+3 parameters, 2 nodes, 1 particles
+Parameters: S013LZ, S013LQE, S013LPE
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 3.20E+1
+chi2 obtained by PDG: 3.20E+1
+====================================================================================================
+K0l3 pole mass
+algorithm: SPECIAL
+for node S013MVD assuring universality, removing fake meas, and directly equating the two parameters ['S013MVM', 'S013MVE']
+2 parameters, 1 nodes, 1 particles
+Parameters: S013MVE, S013MSM
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 1.76E+1
+chi2 obtained by PDG: 1.76E+1
+====================================================================================================
+K0e3 form factors
+algorithm: SPECIAL
+2 parameters, 0 nodes, 1 particles
+Parameters: S013LQE, S013LPE
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 4.69E+0
+chi2 obtained by PDG: 4.69E+0
+====================================================================================================
+Sigma+ decay param.
+algorithm: SPECIAL
+2 parameters, 1 nodes, 1 particles
+Parameters: S019A+, S019A0
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 5.17E+0
+chi2 obtained by PDG: 5.17E+0
+====================================================================================================
+K_L eta+-,00 phase
+algorithm: SPECIAL
+Lifetime node found: S012T
+Adding new row to rel_df for the lifetime node to make it 1 / the width node
+Putting a special equation type in fit_df for this lifetime node
+dep_meas nodes: [np.str_('S012T'), np.str_('S013D')]
+Handling systematic_error_clump: A
+Node in this clump: S013D
+Measurements in this clump: 1
+4 parameters, 4 nodes, 2 particles
+Parameters: S013F+-, S013FOO, S013D, S012W
+Dependent measurements found, these will be accounted for.
+scaling fitted coordinates: S013D / 5.3e+09, S012W / 1.12e+10
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 1.65E+1
+chi2 obtained by PDG: 1.64E+1
+====================================================================================================
+K_L eta+-,00 ph CPT
+algorithm: SPECIAL
+Lifetime node found: S012T
+Adding new row to rel_df for the lifetime node to make it 1 / the width node
+Putting a special equation type in fit_df for this lifetime node
+dep_meas nodes: [np.str_('S012T'), np.str_('S013D')]
+Handling systematic_error_clump: A
+Node in this clump: S013D
+Measurements in this clump: 2
+correlation between S013D clump A measurements 0 and 1: 0.17802665179352076
+4 parameters, 4 nodes, 2 particles
+Parameters: S013D, S013F+-, S013FOO, S012W
+Dependent measurements found, these will be accounted for.
+scaling fitted coordinates: S013D / 5.3e+09, S012W / 1.12e+10
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 2.00E+1
+chi2 obtained by PDG: 1.99E+1
+====================================================================================================
+Sigma+
+algorithm: BR
+3 parameters, 3 nodes, 1 particles
+Parameters: S019.5, S019.1, S019.2
+particles with decays: ['S019']
+normalizing S019 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 2.20E+1
+chi2 obtained by PDG: 2.20E+1
+====================================================================================================
+Sigma-
+algorithm: BR
+4 parameters, 3 nodes, 1 particles
+Parameters: S020.1, S020.3, S020.4, S020.5
+particles with decays: ['S020']
+normalizing S020 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 8.68E+0
+chi2 obtained by PDG: 8.68E+0
+====================================================================================================
+Xi0
+algorithm: BR
+5 parameters, 5 nodes, 1 particles
+Parameters: S023.1, S023.9, S023.10, S023.4, S023.6
+particles with decays: ['S023']
+normalizing S023 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 7.49E+0
+chi2 obtained by PDG: 7.49E+0
+====================================================================================================
+Xi masses
+algorithm: MASS
+for node S022DM equating Xi- and antiXi+ masses, directly equating the two parameters ['S022M1', 'S022M']
+2 parameters, 2 nodes, 2 particles
+Parameters: S022M, S023M
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 7.89E-1
+chi2 obtained by PDG: 7.89E-1
+====================================================================================================
+Omega mean lives
+algorithm: SPECIALT
+for node S024DTT equating omega- and antiomega+ lifetimes, directly equating the two parameters ['S024TA', 'S024T']
+1 parameters, 1 nodes, 1 particles
+Parameters: S024T
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 1.31E-1
+chi2 obtained by PDG: 1.31E-1
+====================================================================================================
+omega(782)
+algorithm: BR
+10 parameters, 16 nodes, 1 particles
+Parameters: M001.1, M001.2, M001.3, M001.7, M001.8, M001.6, M001.14, M001.11, M001.5, M001.13
+particles with decays: ['M001']
+normalizing M001 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 4.89E+1
+chi2 obtained by PDG: 4.89E+1
+====================================================================================================
+D+-
+algorithm: BRU
+18 parameters, 35 nodes, 1 particles
+Parameters: S031.44, S031.179, S031.49, S031.16, S031.14, S031.2, S031.48, S031.1, S031.154, S031.234, S031.51, S031.34, S031.15, S031.90, S031.268, S031.269, S031.295, S031.296
+particles with decays: ['S031']
+converting S031 decay fit seeds from percent to proportion
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 6.50E+1
+chi2 obtained by PDG: 6.50E+1
+====================================================================================================
+a_2(1320)
+algorithm: BR
+4 parameters, 5 nodes, 1 particles
+Parameters: M012.1, M012.2, M012.3, M012.4
+particles with decays: ['M012']
+normalizing M012 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 9.33E+0
+chi2 obtained by PDG: 9.33E+0
+====================================================================================================
+D0-topological
+algorithm: BR
+4 parameters, 4 nodes, 1 particles
+Parameters: S032.334, S032.333, S032.332, S032.335
+particles with decays: ['S032']
+normalizing S032 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 1.43E-7
+chi2 obtained by PDG: 2.91E-13
+====================================================================================================
+Nu-mix s(23)-normal
+algorithm: SPECIAL
+1 parameters, 0 nodes, 1 particles
+Parameters: S067P23
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 4.67E+0
+chi2 obtained by PDG: 4.69E+0
+====================================================================================================
+Ds*+-
+algorithm: BR
+3 parameters, 2 nodes, 1 particles
+Parameters: S074.1, S074.2, S074.3
+particles with decays: ['S074']
+normalizing S074 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 2.04E-3
+chi2 obtained by PDG: 2.04E-3
+====================================================================================================
+D_s1
+algorithm: BR
+5 parameters, 7 nodes, 1 particles
+Parameters: M173.3, M173.2, M173.1, M173.6, M173.5
+particles with decays: ['M173']
+normalizing M173 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 3.37E+0
+chi2 obtained by PDG: 3.37E+0
+====================================================================================================
+Lam-b-0
+algorithm: BRU
+br_adjust nodes: [np.str_('S040.11'), np.str_('S042.10'), np.str_('S042.30'), np.str_('S051.2'), np.str_('S051.4')]
+br_adjust nodes not in fit: [np.str_('S042.10'), np.str_('S042.30'), np.str_('S051.2'), np.str_('S051.4')]
+adding nuisance parameter: nuisance_S042.10
+adding nuisance parameter: nuisance_S042.30
+adding nuisance parameter: nuisance_S051.2
+adding nuisance parameter: nuisance_S051.4
+nuisance correlations found, adding to corr_df
+  par_code_row parameter_row par_code_column parameter_column  coefficient
+0         S042            30            S042               10          0.0
+10 parameters, 10 nodes, 1 particles
+Parameters: S040.15, S040.11, S040.4, S040.10, S040.9, S040.29, nuisance_S042.10, nuisance_S042.30, nuisance_S051.2, nuisance_S051.4
+particles with decays: ['S040']
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 1.43E+1
+chi2 obtained by PDG: 1.08E+1
+====================================================================================================
+K_L eta+-,00 param.
+algorithm: SPECIAL
+2 parameters, 3 nodes, 1 particles
+Parameters: S013E00, S013E+-
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 9.07E+0
+chi2 obtained by PDG: 9.07E+0
+====================================================================================================
+B+J/psi
+algorithm: BRU
+br_adjust nodes: [np.str_('M070.1'), np.str_('M070.50'), np.str_('M070.54'), np.str_('M071.1'), np.str_('M071.27'), np.str_('S042.30')]
+br_adjust nodes not in fit: [np.str_('M070.1'), np.str_('M070.50'), np.str_('M070.54'), np.str_('M071.1'), np.str_('M071.27'), np.str_('S042.30')]
+adding nuisance parameter: nuisance_M070.1
+adding nuisance parameter: nuisance_M070.50
+adding nuisance parameter: nuisance_M070.54
+adding nuisance parameter: nuisance_M071.1
+adding nuisance parameter: nuisance_M071.27
+adding nuisance parameter: nuisance_S042.30
+nuisance correlations found, adding to corr_df
+  par_code_row parameter_row par_code_column parameter_column  coefficient
+0         M070            50            M070                1    -9.563960
+1         M071            27            M071                1    -0.314898
+19 parameters, 21 nodes, 1 particles
+Parameters: S041.3, S041.222, S041.20, S041.10, S041.142, S041.162, S041.499, S041.146, S041.165, S041.1, S041.443, S041.241, S041.5, nuisance_M070.1, nuisance_M070.50, nuisance_M070.54, nuisance_M071.1, nuisance_M071.27, nuisance_S042.30
+particles with decays: ['S041']
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 7.37E+1
+chi2 obtained by PDG: 6.87E+1
+====================================================================================================
+pi0
+algorithm: BR
+3 parameters, 3 nodes, 1 particles
+Parameters: S009.1, S009.2, S009.3
+particles with decays: ['S009']
+normalizing S009 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 4.64E+0
+chi2 obtained by PDG: 4.64E+0
+====================================================================================================
+B0S-BR
+algorithm: BRU
+br_adjust nodes: [np.str_('M004.1'), np.str_('M092.16'), np.str_('S041.3'), np.str_('S042.14'), np.str_('S042.30'), np.str_('S042.88'), np.str_('S051R2')]
+br_adjust nodes not in fit: [np.str_('M004.1'), np.str_('M092.16'), np.str_('S041.3'), np.str_('S042.14'), np.str_('S042.30'), np.str_('S042.88'), np.str_('S051R2')]
+adding nuisance parameter: nuisance_M004.1
+adding nuisance parameter: nuisance_M092.16
+adding nuisance parameter: nuisance_S041.3
+adding nuisance parameter: nuisance_S042.14
+adding nuisance parameter: nuisance_S042.30
+adding nuisance parameter: nuisance_S042.88
+adding nuisance parameter: nuisance_S051R2
+nuisance correlations found, adding to corr_df
+  par_code_row parameter_row par_code_column parameter_column  coefficient
+0         S042            30            S042               14       0.0000
+1         S042            88            S042               14       0.0000
+2         S042            88            S042               30      28.3783
+14 parameters, 12 nodes, 1 particles
+Parameters: S086.37, S086.5, S086.7, S086.42, S086.32, S086.30, S086.52, nuisance_M004.1, nuisance_M092.16, nuisance_S041.3, nuisance_S042.14, nuisance_S042.30, nuisance_S042.88, nuisance_S051R2
+particles with decays: ['S086']
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 2.58E+1
+chi2 obtained by PDG: 2.71E+1
+====================================================================================================
+rho(770) neutral
+algorithm: BR
+br_adjust nodes: [np.str_('M009.4')]
+9 parameters, 8 nodes, 1 particles
+Parameters: M009.8, M009.40, M009.80, M009.60, M009.22, M009W5, M009.12, M009.4, M009.6
+particles with decays: ['M009']
+normalizing M009 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 9.47E+0
+chi2 obtained by PDG: 9.47E+0
+====================================================================================================
+chi_c012 psi(2S)
+algorithm: BR
+br_adjust nodes: [np.str_('M070.2'), np.str_('M070.334'), np.str_('M070.335'), np.str_('M071.13')]
+br_adjust nodes not in fit: [np.str_('M070.2'), np.str_('M070.334'), np.str_('M070.335')]
+adding nuisance parameter: nuisance_M070.2
+adding nuisance parameter: nuisance_M070.334
+adding nuisance parameter: nuisance_M070.335
+52 parameters, 118 nodes, 4 particles
+Parameters: M056W, M056.6, M056.11, M056.7, M056.18, M056.13, M056.2, M056.15, M056.3, M056.9, M056.5, M056.10, M056.14, M056.16, M055W, M055.1, M055.11, M055.17, M055.14, M057W, M057.6, M057.11, M057.7, M057.22, M057.2, M057.15, M057.3, M057.9, M057.5, M057.10, M057.21, M057.24, M057.16, M071W, M071.13, M071.14, M071.15, M071.56, M071.58, M071.59, M071.1, M071.2, M071.68, M071.27, M056.19, M055.19, M057.19, M057.14, M057.17, nuisance_M070.2, nuisance_M070.334, nuisance_M070.335
+particles with decays: ['M055' 'M056' 'M057' 'M071']
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 3.94E+2
+chi2 obtained by PDG: 3.93E+2
+====================================================================================================
+pi masses
+algorithm: MASS
+2 parameters, 1 nodes, 2 particles
+Parameters: S009M, S008M
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 8.27E+0
+chi2 obtained by PDG: 8.27E+0
+====================================================================================================
+eta_c J/psi psi(2S)
+algorithm: BRU
+br_adjust nodes: [np.str_('M071.13'), np.str_('M071.254')]
+br_adjust nodes not in fit: [np.str_('M071.13'), np.str_('M071.254')]
+adding nuisance parameter: nuisance_M071.13
+adding nuisance parameter: nuisance_M071.254
+21 parameters, 50 nodes, 5 particles
+Parameters: M026W, M026.31, M026.45, M026.11, M026.12, M026.14, M026.15, M026.17, M026.18, M026.20, M026.24, M026.25, M026.27, M026.46, M070.85, M071.61, S041.265, M144.4, M026.13, nuisance_M071.13, nuisance_M071.254
+particles with decays: ['M026' 'M070' 'M071' 'M144' 'S041']
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 1.86E+2
+chi2 obtained by PDG: 1.85E+2
+====================================================================================================
+psi masses
+algorithm: MASS
+2 parameters, 1 nodes, 2 particles
+Parameters: M071M, M053M
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 6.14E+1
+chi2 obtained by PDG: 6.14E+1
+====================================================================================================
+K+-
+algorithm: BR
+Lifetime node found: S010T
+Lifetime node found in rel_df: S010T
+rel_df rows with this node are being deleted
+It is unclear if this is the correct thing to do!
+Adding new row to rel_df for the lifetime node to make it 1 / the width node
+Putting a special equation type in fit_df for this lifetime node
+8 parameters, 25 nodes, 1 particles
+Parameters: S010.24, S010.1, S010.2, S010.3, S010.4, S010.5, S010.6, S010W
+particles with decays: ['S010']
+normalizing S010 decay fit seeds to sum to 1
+scaling fitted coordinates: S010W / 8.09e+07
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 5.35E+1
+chi2 obtained by PDG: 5.34E+1
+====================================================================================================
+eta
+algorithm: BR
+9 parameters, 28 nodes, 1 particles
+Parameters: S014.4, S014.7, S014.1, S014.2, S014.3, S014.6, S014.8, S014W, S014.13
+particles with decays: ['S014']
+normalizing S014 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 4.64E+1
+chi2 obtained by PDG: 4.64E+1
+====================================================================================================
+B masses
+algorithm: MASS
+15 parameters, 17 nodes, 11 particles
+Parameters: S086M, S087M, S041M, S042M, S085M, M187M, M186M, M246M+, M248M+, M248M0, M244M0, M244M+, M245M0, M245M+, M246M0
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 5.17E+1
+chi2 obtained by PDG: 5.17E+1
+====================================================================================================
+B0
+algorithm: BRU
+br_adjust nodes: [np.str_('M070.1'), np.str_('M070.50'), np.str_('M070.54')]
+br_adjust nodes not in fit: [np.str_('M070.1'), np.str_('M070.50'), np.str_('M070.54')]
+adding nuisance parameter: nuisance_M070.1
+adding nuisance parameter: nuisance_M070.50
+adding nuisance parameter: nuisance_M070.54
+nuisance correlations found, adding to corr_df
+  par_code_row parameter_row par_code_column parameter_column  coefficient
+0         M070            50            M070                1     -9.56396
+Handling systematic_error_clump: A
+Node in this clump: S042R21
+Measurements in this clump: 3
+correlation between S042R21 clump A measurements 0 and 1: 0.8202523943647159
+correlation between S042R21 clump A measurements 0 and 2: 0.8335785561003124
+correlation between S042R21 clump A measurements 1 and 2: 0.854681008165455
+25 parameters, 36 nodes, 1 particles
+Parameters: S042.181, S042.390, S042.69, S042.68, S042.71, S042.22, S042.17, S042.23, S042.5, S042.10, S042.30, S042.88, S042.331, S042.81, S042.80, S042.228, S042.127, S042.329, S042.26, S042.14, S042.52, S042.51, nuisance_M070.1, nuisance_M070.50, nuisance_M070.54
+particles with decays: ['S042']
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 8.29E+1
+chi2 obtained by PDG: 7.09E+1
+====================================================================================================
+Lambda
+algorithm: BR
+3 parameters, 4 nodes, 1 particles
+Parameters: S018.1, S018.3, S018.2
+particles with decays: ['S018']
+normalizing S018 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 6.89E+0
+chi2 obtained by PDG: 6.89E+0
+====================================================================================================
+K+l3 lin form fact
+algorithm: SPECIAL
+for node S010L0U assuring universality, removing fake meas, and directly equating the two parameters ['S010L+M', 'S010L+E']
+2 parameters, 1 nodes, 1 particles
+Parameters: S010L0, S010L+E
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 8.57E+0
+chi2 obtained by PDG: 8.57E+0
+====================================================================================================
+K+mu3 lin form fact
+algorithm: SPECIAL
+2 parameters, 0 nodes, 1 particles
+Parameters: S010L+M, S010L0
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 6.87E+0
+chi2 obtained by PDG: 6.87E+0
+====================================================================================================
+Lambda/Sigmas masses
+algorithm: MASS
+4 parameters, 4 nodes, 4 particles
+Parameters: S018M, S019M, S020M, S021M
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 2.39E+1
+chi2 obtained by PDG: 2.39E+1
+====================================================================================================
+Xibar+
+algorithm: BR
+5 parameters, 4 nodes, 1 particles
+Parameters: S022.1, S022.9, S022.2, S022.4, S022.5
+particles with decays: ['S022']
+normalizing S022 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 1.01E+0
+chi2 obtained by PDG: 1.01E+0
+====================================================================================================
+Xi_Lam_alpha
+algorithm: SPECIAL
+2 parameters, 1 nodes, 2 particles
+Parameters: S018A-, S022AA
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 5.91E+1
+chi2 obtained by PDG: 5.91E+1
+====================================================================================================
+Omega_c masses
+algorithm: MASS
+2 parameters, 1 nodes, 2 particles
+Parameters: S053M, S047M
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 3.42E+0
+chi2 obtained by PDG: 3.42E+0
+====================================================================================================
+Omega masses
+algorithm: MASS
+for node S024DM equating omega- and antiomega+ masses, directly equating the two parameters ['S024M', 'S024MB']
+1 parameters, 1 nodes, 1 particles
+Parameters: S024MB
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 5.98E+0
+chi2 obtained by PDG: 5.98E+0
+====================================================================================================
+K^*(892) charged
+algorithm: BR
+3 parameters, 2 nodes, 1 particles
+Parameters: M018W1, M018.3, M018.11
+particles with decays: ['M018']
+normalizing M018 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 1.07E+1
+chi2 obtained by PDG: 1.07E+1
+====================================================================================================
+D0
+algorithm: BRU
+br_adjust nodes: [np.str_('S014.1')]
+br_adjust nodes not in fit: [np.str_('S014.1')]
+adding nuisance parameter: nuisance_S014.1
+36 parameters, 71 nodes, 1 particles
+Parameters: S032.9, S032.64, S032.123, S032.93, S032.41, S032.77, S032.65, S032.143, S032.129, S032.3, S032.8, S032.49, S032.46, S032.27, S032.1, S032.2, S032.18, S032.29, S032.308, S032.7, S032.35, S032.247, S032.50, S032.187, S032.5, S032.378, S032.316, S032.173, S032.381, S032.380, S032.58, S032.553, S032.277, S032.602, S032.307, nuisance_S014.1
+particles with decays: ['S032']
+converting S032 decay fit seeds from percent to proportion
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 1.50E+2
+chi2 obtained by PDG: 1.50E+2
+====================================================================================================
+psi(3770)
+algorithm: BRU
+4 parameters, 6 nodes, 1 particles
+Parameters: M053W, M053.6, M053.5, M053.1
+particles with decays: ['M053']
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 2.01E+1
+chi2 obtained by PDG: 2.01E+1
+====================================================================================================
+Nu-mix Dm(32)-invert
+algorithm: SPECIAL
+1 parameters, 0 nodes, 1 particles
+Parameters: S067DM1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 9.90E+0
+chi2 obtained by PDG: 9.90E+0
+====================================================================================================
+Nu-mix Dm(32)-normal
+algorithm: SPECIAL
+1 parameters, 0 nodes, 1 particles
+Parameters: S067DM1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 9.05E+0
+chi2 obtained by PDG: 9.06E+0
+====================================================================================================
+Lambda_c
+algorithm: BRU
+br_adjust nodes: [np.str_('M001.8'), np.str_('M004.6'), np.str_('S014.12')]
+br_adjust nodes not in fit: [np.str_('M001.8'), np.str_('M004.6'), np.str_('S014.12')]
+adding nuisance parameter: nuisance_M001.8
+adding nuisance parameter: nuisance_M004.6
+adding nuisance parameter: nuisance_S014.12
+29 parameters, 55 nodes, 1 particles
+Parameters: S033.4, S033.21, S033.35, S033.43, S033.1, S033.10, S033.51, S033.2, S033.27, S033.65, S033.59, S033.26, S033.25, S033.24, S033.49, S033.18, S033.47, S033.9, S033.120, S033.44, S033.128, S033.63, S033.62, S033.121, S033.116, S033.34, nuisance_M001.8, nuisance_M004.6, nuisance_S014.12
+particles with decays: ['S033']
+converting S033 decay fit seeds from percent to proportion
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 5.88E+1
+chi2 obtained by PDG: 5.88E+1
+====================================================================================================
+Nu-mix s(23)-invert
+algorithm: SPECIAL
+1 parameters, 0 nodes, 1 particles
+Parameters: S067P23
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 5.68E+0
+chi2 obtained by PDG: 5.69E+0
+====================================================================================================
+Lam_c/Sig_c masses
+algorithm: MASS
+clump: A
+nodes: ['B104D++', 'B104D13', 'B104D0']
+{'X': 'B104D++', 'Y': 'B104D0', 'D': 'B104D13'}
+corrXY: 0.34615384615384603
+corrXD: 0.5717718748968657
+corrYD: -0.5717718748968657
+clump: B
+nodes: ['B104D++', 'B104D0', 'B104D13']
+{'X': 'B104D++', 'Y': 'B104D0', 'D': 'B104D13'}
+corrXY: 0.143996247654784
+corrXD: 0.6542185232570292
+corrYD: -0.6542185232570292
+clump: C
+nodes: ['B115D++', 'B115D0']
+WARNING: clump2 "C" has 2 measurements, expected 3. Skipping.
+clump: D
+nodes: ['B104D++', 'B104D0', 'B104D13']
+{'X': 'B104D++', 'Y': 'B104D0', 'D': 'B104D13'}
+corrXY: 0.189181512146997
+corrXD: 0.5916842550250504
+corrYD: -0.6796763696011932
+clump: E
+nodes: ['B104D++', 'B104D0', 'B104D13']
+{'X': 'B104D++', 'Y': 'B104D0', 'D': 'B104D13'}
+corrXY: 0.8
+corrXD: 0.3162277660168379
+corrYD: -0.3162277660168379
+clump: F
+nodes: ['B115D0', 'B115D++']
+WARNING: clump2 "F" has 2 measurements, expected 3. Skipping.
+clump: G
+nodes: ['B104D0', 'B104D++', 'B104D13']
+{'X': 'B104D++', 'Y': 'B104D0', 'D': 'B104D13'}
+corrXY: 0.8
+corrXD: 0.3162277660168379
+corrYD: -0.3162277660168379
+clump: H
+nodes: ['B115D0', 'B115D++']
+WARNING: clump2 "H" has 2 measurements, expected 3. Skipping.
+14 parameters, 15 nodes, 8 particles
+Parameters: B102M, B119M, B115M++, B115M0, B104M0, B115M+, B151M, B150M, B155M0, B155M+, B155M++, S033M, B104M+, B104M++
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 4.47E+1
+chi2 obtained by PDG: 4.89E+1
+====================================================================================================
+Xi(1530) mass
+algorithm: MASS
+2 parameters, 1 nodes, 1 particles
+Parameters: B049M0, B049M-
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 1.33E+1
+chi2 obtained by PDG: 1.33E+1
+====================================================================================================
+K0mu3 form factors
+algorithm: SPECIAL
+3 parameters, 0 nodes, 1 particles
+Parameters: S013LZ, S013LQM, S013LPM
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 2.46E+1
+chi2 obtained by PDG: 2.46E+1
+====================================================================================================
+K0mu3 pole mass
+algorithm: SPECIAL
+2 parameters, 0 nodes, 1 particles
+Parameters: S013MVM, S013MSM
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 1.29E+1
+chi2 obtained by PDG: 1.29E+1
+====================================================================================================
+K_L
+algorithm: BR
+Lifetime node found: S013T
+Lifetime node found in rel_df: S013T
+rel_df rows with this node are being deleted
+It is unclear if this is the correct thing to do!
+Adding new row to rel_df for the lifetime node to make it 1 / the width node
+Putting a special equation type in fit_df for this lifetime node
+br_adjust nodes: [np.str_('S009K3P')]
+br_adjust nodes not in fit: [np.str_('S009K3P')]
+adding nuisance parameter: nuisance_S009K3P
+12 parameters, 32 nodes, 1 particles
+Parameters: S013.11, S013.9, S013.50, S013.10, S013.14, S013.1, S013.2, S013.3, S013.4, S013.5, S013W, nuisance_S009K3P
+particles with decays: ['S013']
+normalizing S013 decay fit seeds to sum to 1
+scaling fitted coordinates: S013W / 1.85e+07
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 3.74E+1
+chi2 obtained by PDG: 3.74E+1
+====================================================================================================
+eta_c(2S)
+algorithm: BRU
+3 parameters, 4 nodes, 2 particles
+Parameters: M059.4, M071.63, M059.20
+particles with decays: ['M059' 'M071']
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 2.59E+0
+chi2 obtained by PDG: 2.59E+0
+====================================================================================================
+D^*(2007)0
+algorithm: BR
+2 parameters, 3 nodes, 1 particles
+Parameters: M061.2, M061.1
+particles with decays: ['M061']
+normalizing M061 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 2.50E+0
+chi2 obtained by PDG: 2.50E+0
+====================================================================================================
+Xi_c
+algorithm: BRU
+4 parameters, 7 nodes, 1 particles
+Parameters: S048.12, S048.1, S048.10, S048.17
+particles with decays: ['S048']
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 1.45E+0
+chi2 obtained by PDG: 1.45E+0
+====================================================================================================
+Xi_c masses
+algorithm: MASS
+clump: A
+nodes: ['S048M', 'S045M', 'S048D']
+{'D': 'S048D', 'X': 'S048M', 'Y': 'S045M'}
+corrXY: 0.66
+corrXD: 0.412310562561766
+corrYD: -0.412310562561766
+clump: C
+nodes: ['S045M', 'S048M', 'S048D']
+{'D': 'S048D', 'X': 'S048M', 'Y': 'S045M'}
+corrXY: 0.05205258186289638
+corrXD: 0.5842661351331799
+corrYD: -0.7800493666632973
+clump: D
+nodes: ['S045M', 'S048M', 'S048D']
+{'D': 'S048D', 'X': 'S048M', 'Y': 'S045M'}
+Warning: clump2 "D", node S048M has asymmetric errors, symmetrizing.
+Warning: clump2 "D", node S045M has asymmetric errors, symmetrizing.
+corrXY: 0.8552283680957595
+corrXD: 0.1646361803709328
+corrYD: -0.37037792575270345
+clump: E
+nodes: ['B146M0', 'B146M+']
+WARNING: clump2 "E" has 2 measurements, expected 3. Skipping.
+clump: G
+nodes: ['S048M', 'S048D', 'S045M']
+{'D': 'S048D', 'X': 'S048M', 'Y': 'S045M'}
+corrXY: 0.8642877741506346
+corrXD: 0.43828213667623167
+corrYD: -0.07331124146834365
+clump: B
+nodes: ['S045M', 'S048M', 'S048D']
+{'D': 'S048D', 'X': 'S048M', 'Y': 'S045M'}
+corrXY: 0.19880216987180638
+corrXD: 0.4973023910360658
+corrYD: -0.751395328541891
+12 parameters, 18 nodes, 8 particles
+Parameters: B146M0, B146M+, S058M, S059M, B148M+, B148M0, B149M+, B149M0, S045M, S048M, B130M0, B130M+
+!!!correlation matrix is not PSD!!!
+!!!this is probably bad!!!
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 1.46E+2
+chi2 obtained by PDG: 1.49E+2
+====================================================================================================
+D,D*,D_s,D_s* masses
+algorithm: MASS
+12 parameters, 16 nodes, 12 particles
+Parameters: S034M, M061M, M062M, S031M, S032M, M172M, M173M, S074M, M121M, M254M, M253M, M265M
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 3.42E+2
+chi2 obtained by PDG: 3.42E+2
+====================================================================================================
+D_s
+algorithm: BRU
+br_adjust nodes: [np.str_('M001.1')]
+br_adjust nodes not in fit: [np.str_('M001.1')]
+adding nuisance parameter: nuisance_M001.1
+13 parameters, 19 nodes, 1 particles
+Parameters: S034.40, S034.15, S034.1, S034.22, S034.41, S034.26, S034.45, S034.19, S034.43, S034.129, S034.217, S034.116, nuisance_M001.1
+particles with decays: ['S034']
+converting S034 decay fit seeds from percent to proportion
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 1.21E+1
+chi2 obtained by PDG: 1.21E+1
+====================================================================================================
+rho(770) charged
+algorithm: BR
+3 parameters, 1 nodes, 1 particles
+Parameters: M009.3, M009.11, M009W2
+particles with decays: ['M009']
+normalizing M009 decay fit seeds to sum to 1
+performing fit...
+fit valid: True, errors from hessian accurate: True
+chi2 obtained: 1.07E+1
+chi2 obtained by PDG: 1.07E+1

@@ -1,0 +1,41 @@
+Suggested optimizations for build_chi2.py
+==========================================
+
+1. Avoid materializing the N×N covariance matrix (biggest win)
+---------------------------------------------------------------
+Currently, every chi2 call computes:
+    cov_mat_inv = corr_mat_inv * 1/jnp.outer(error, error)
+    chi2 = jnp.sum(resid @ cov_mat_inv @ resid)
+
+This allocates an N×N matrix on every call. Since:
+    r^T (C ⊙ 1/(e eᵀ)) r  =  (r/e)^T C (r/e)
+
+Replace with:
+    normed_resid = resid / error
+    chi2_val = normed_resid @ corr_mat_inv @ normed_resid
+
+Same flop count, but eliminates the jnp.outer allocation and the
+elementwise multiply with corr_mat_inv — both O(N²) — before the matvec.
+
+2. Precompute constants outside the JIT boundary
+-------------------------------------------------
+In get_sigma, the expressions (error_n + error_p), (error_p - error_n),
+and (2 * error_n * error_p) are recomputed on every chi2 call but depend
+only on the fixed build-time inputs. Move them to build_chi2 scope:
+
+    sum_e  = error_n + error_p
+    diff_e = error_p - error_n
+    prod_e2 = 2 * error_n * error_p
+
+Then get_sigma becomes:
+    def get_sigma(resid, adjustment):
+        resid_ua = resid / adjustment
+        error_between = (prod_e2 - resid_ua * diff_e) / sum_e
+        return jnp.clip(error_between, error_min, error_max) * adjustment
+
+3. Remove redundant jnp.sum()
+------------------------------
+resid @ cov_mat_inv @ resid with 1D resid already returns a scalar.
+The outer jnp.sum() is a no-op and can be removed.
+
+Applies to: build_chi2 and build_chi2_c (same pattern in both).

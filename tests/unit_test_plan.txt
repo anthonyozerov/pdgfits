@@ -1,0 +1,253 @@
+Unit Test Plan
+==============
+
+Framework: pytest
+File layout: tests/ directory at the repo root (or alongside src/), one file per module.
+No DB connection required for any test below — all inputs are constructed inline.
+JAX x64 must be enabled at the top of each test file:
+    import jax; jax.config.update("jax_enable_x64", True)
+
+
+────────────────────────────────────────────────────────
+1. tests/test_parser.py  — parser.parse_measurement
+────────────────────────────────────────────────────────
+
+1.1  Basic asymmetric errors
+     Input:  "1.23+0.05-0.03"
+     Expect: value=1.23, pos_err=0.05, neg_err=0.03
+
+1.2  Trailing exponent
+     Input:  "1.23+0.05-0.03E-3"
+     Expect: value=1.23e-3, pos_err=0.05e-3, neg_err=0.03e-3
+
+1.3  Combined stat+syst errors in quadrature
+     Input:  "1.0+0.3+0.4-0.3-0.4"  (two pos errors 0.3, 0.4; two neg errors 0.3, 0.4)
+     Expect: pos_err = sqrt(0.3^2 + 0.4^2) = 0.5, neg_err = 0.5
+
+1.4  @ stripping
+     Input:  "1.5+0.1-0.1@SOME_FLAG"
+     Expect: same result as "1.5+0.1-0.1"
+
+1.5  Symmetric +-  token
+     Input:  "2.0+-0.1"
+     Expect: pos_err=0.1, neg_err=0.1
+
+1.6  No errors (bare number)
+     Input:  "3.14"
+     Expect: value=3.14, pos_err=0.0, neg_err=0.0
+
+1.7  Parenthesized string
+     Input:  "(1.0+0.1-0.1)"
+     Expect: value=1.0, pos_err=0.1, neg_err=0.1
+
+1.8  last_err field
+     Input:  "1.0+0.3-0.2"
+     Expect: last_err = (0.3 + 0.2) / 2 = 0.25
+
+parser.get_scale
+1.9  keV → MeV scale factor = 1e-3
+1.10 eV  → MeV scale factor = 1e-6
+1.11 unknown unit returns 1
+
+parser.parameter_key
+1.12 non-null par_code: parameter_key("S012", "G001") == "S012.G001"
+1.13 null/NaN par_code: parameter_key(np.nan, "G001") == "G001"
+
+
+────────────────────────────────────────────────────────
+2. tests/test_func_factory.py  — func_factory.func_factory / term
+────────────────────────────────────────────────────────
+
+For all tests: params = jnp.array([2.0, 3.0])
+coeff_params_no_coeff = [[0, 0], [0, 0], [0, 0]]  (all index-0 → multiply by 1)
+
+2.1  '+' (linear sum)
+     coefficients = [[1.0, 0.0], ...]
+     Expect: f(params) == 2.0   (selects first param with coeff 1.0)
+
+2.2  '+' with second param
+     coefficients = [[0.0, 1.0], ...]
+     Expect: f(params) == 3.0
+
+2.3  'lifetime'  (1/x)
+     coefficients = [[1.0, 0.0], ...]
+     Expect: f(params) ≈ 0.5
+
+2.4  '/' (ratio)
+     coefficients row 0 selects param 0, row 1 selects param 1
+     Expect: f(params) == 2.0/3.0
+
+2.5  'G+' == 'R+' (product of two terms)
+     Expect: f(params) == 2.0 * 3.0 = 6.0
+
+2.6  'P' (product of two terms, same as G+)
+     Expect: f(params) == 6.0
+
+2.7  'G*' (product of three terms)
+     params = jnp.array([2.0, 3.0, 4.0])
+     Expect: f(params) == 2.0 * 3.0 * 4.0 = 24.0
+
+2.8  'SR' (sqrt of product)
+     Expect: f(params) == sqrt(2.0 * 3.0) ≈ 2.449
+
+2.9  'SQ' (sqrt(term0 * term1) * term2)
+     params = [2.0, 3.0, 4.0]
+     Expect: f(params) == sqrt(2.0 * 3.0) * 4.0 ≈ 9.798
+
+2.10 'P/' (term0 * term1 / term2)
+     params = [2.0, 3.0, 4.0]
+     Expect: f(params) == 2.0 * 3.0 / 4.0 = 1.5
+
+2.11 Unknown equation type raises ValueError
+     Expect: func_factory('BOGUS', ...) raises ValueError
+
+2.12 JAX-differentiability: jax.grad(f)(params) does not raise and is finite
+     Test for all valid equation types.
+
+
+────────────────────────────────────────────────────────
+3. tests/test_corr_mat.py  — corr_mat.get_corr_mat
+────────────────────────────────────────────────────────
+
+Construct minimal DataFrames inline (no DB).
+
+3.1  Empty corr_df → identity matrix
+     meas_df with 3 rows; corr_df empty
+     Expect: get_corr_mat(...) == jnp.eye(3)
+
+3.2  One off-diagonal entry
+     meas_df rows: (nodeA, ref1, 0), (nodeB, ref2, 0), (nodeC, ref3, 0)
+     corr_df: nodeA/ref1/0 ↔ nodeB/ref2/0 with correlation=0.5
+     Expect: mat[0,1] == 0.5, mat[1,0] == 0.5, diagonal all 1.0, mat[0,2]==0, mat[1,2]==0
+
+3.3  Correlation entry referencing a node not in meas_df is silently ignored
+     Add a corr_df row for a node not present; matrix should still be identity for present nodes.
+
+3.4  Output is a JAX array of dtype float64.
+
+
+────────────────────────────────────────────────────────
+4. tests/test_build_chi2.py  — build_chi2.build_chi2
+────────────────────────────────────────────────────────
+
+4.1  Zero residuals → chi2 == 0
+     y = mu(params) for all params; symmetric errors; identity corr
+     Expect: chi2(params) == 0.0
+
+4.2  Single measurement, symmetric errors
+     y=[1.0], mu returns [2.0], error_n=error_p=[1.0], identity corr
+     Expect: chi2 == (1.0-2.0)^2 / 1.0^2 = 1.0
+
+4.3  chi2 is non-negative for arbitrary inputs
+     Random params; check chi2(params) >= 0.
+
+4.4  Gradient at minimum is near zero
+     Set up a trivial fit where mu(params) = params (identity), y=params_true.
+     Minimize analytically; verify chi2_grad ≈ 0 at the minimum.
+
+4.5  Asymmetric errors: residual sign selects the correct sigma
+     error_n=0.1, error_p=1.0; when resid > 0, effective sigma ≈ error_p;
+     when resid < 0, effective sigma ≈ error_n. Check chi2 values reflect this.
+
+4.6  translate_dep shifts residuals correctly
+     translate_dep = lambda p: jnp.array([1.0]); y=[0.0]; mu returns [0.0]; error=[1.0]
+     Expect: chi2 == (0.0*1 + 1.0 - 0.0)^2 = 1.0
+
+4.7  adjust scales both y and sigma
+     adjust = lambda p: jnp.array([2.0]); y=[1.0]; mu returns [2.0]; error=[1.0]
+     resid = 1.0*2.0 + 0 - 2.0 = 0.0 → chi2 == 0.0
+
+4.8  chi2_val returns a Python float (not a JAX array).
+
+4.9  chi2_grad returns a numpy array (not a JAX array).
+
+
+────────────────────────────────────────────────────────
+5. tests/test_param_maps.py  — param_maps
+────────────────────────────────────────────────────────
+
+Helper: build a fake parameters list like ["S012.G001", "S012.G002", "S012.G003", "mass"]
+(first three are decay BRs for particle S012; last is a non-decay param).
+
+build_param_map_sigmoid
+5.1  Round-trip: params_to_fitted_params then fitted_params_to_params recovers original
+     Start from params in (0,1) for decay indices; check round-trip ≈ identity.
+
+5.2  fitted_params_to_params maps decay indices to (0,1)
+     Large positive logit input → sigmoid output close to 1.
+     Large negative logit input → sigmoid output close to 0.
+
+5.3  Non-decay params are passed through unchanged.
+
+build_param_map_softmax
+5.4  fitted_params_to_params: decay params sum to 1.0 (to float64 precision).
+
+5.5  Round-trip for softmax (up to log-softmax gauge freedom):
+     params_to_fitted_params then fitted_params_to_params recovers original decay values.
+
+5.6  Non-decay params are passed through unchanged.
+
+5.7  Raises AssertionError when called with parameters from two different particles
+     (softmax only supports one particle).
+
+get_decay_info
+5.8  Correctly identifies decay particles and their parameter indices
+     For ["S012.G001", "S012.G002", "mass"], decay_particles==["S012"], decay_param_idxs==[0,1].
+
+5.9  No decay params → empty decay_particles and empty decay_param_idxs.
+
+
+────────────────────────────────────────────────────────
+6. Integration test (requires DB — mark with @pytest.mark.db)
+────────────────────────────────────────────────────────
+
+Run every fit in fit_control1 (skip algorithm == 'IGNORE' and any that return
+None from run_fit) with optimizer='minuit', fit_space='unconstrained'.
+Use fit_query.all_fits() to enumerate labels; pdg_chi2 comes from
+diagnostics.get_pdg_chi2(label).
+
+Prerequisite: run_fit must return 'fit_valid' and 'hesse_accurate' (currently
+not in the return dict — add m.valid → 'fit_valid' and m.accurate →
+'hesse_accurate' before running these tests).
+
+For every fit that does not return None, parametrize over labels and assert:
+
+6.1  Minuit reports a valid fit.
+     Assert: result['fit_valid'] is True
+
+6.2  Minuit reports an accurate Hesse (covariance from Hessian succeeded).
+     Assert: result['hesse_accurate'] is True
+
+6.3  chi2_min is not much worse than the PDG value.
+     Assert: result['chi2_min'] < pdg_chi2 + 6
+
+6.4  Covariance matrix is symmetric.
+     cov = np.array(result['covariance'])
+     Assert: np.allclose(cov, cov.T, atol=1e-10)
+
+6.5  Covariance matrix is positive semi-definite.
+     Assert: all eigenvalues of cov >= -1e-8
+     (use np.linalg.eigvalsh for symmetric matrices)
+
+
+────────────────────────────────────────────────────────
+Running the tests
+────────────────────────────────────────────────────────
+
+    pip install pytest
+    cd /path/to/repo
+    pytest tests/                        # unit tests only
+    pytest tests/ -m db --db            # include DB regression tests (add --db flag to conftest)
+
+Suggested conftest.py:
+    import pytest
+    def pytest_addoption(parser):
+        parser.addoption("--db", action="store_true", default=False)
+    def pytest_configure(config):
+        config.addinivalue_line("markers", "db: requires live DB tunnel")
+    def pytest_collection_modifyitems(config, items):
+        if not config.getoption("--db"):
+            skip = pytest.mark.skip(reason="pass --db to run")
+            for item in items:
+                if "db" in item.keywords:
+                    item.add_marker(skip)

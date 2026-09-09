@@ -244,3 +244,10 @@ def get_mu_vectorized(parameters, nodes, meas_df, fit_df, rel_df, jit=True):
             return result.at[nl_idxs_arr].set(nl_vals)
 
     return mu
+
+def get_mu_adjust(mu, adjust, translate_dep):
+
+    def mu_adjust(params):
+        return (mu(params) - translate_dep(params))/adjust(params)
+
+    return mu_adjust

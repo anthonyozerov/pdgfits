@@ -3,15 +3,307 @@ import jax
 from jax import numpy as jnp
 import warnings
 from iminuit import Minuit
-from scipy.optimize import minimize as scipy_minimize, Bounds, LinearConstraint
+from scipy.optimize import minimize as scipy_minimize, Bounds, LinearConstraint, OptimizeResult
 
 from pdgfits.query import fit_queries
 from pdgfits.preprocess import preprocess
-from pdgfits.build_funcs import get_node_funcs, get_parameter_funcs, get_meas_funcs, get_mu, get_translate_dep, get_adjust
+from pdgfits.build_funcs import get_node_funcs, get_parameter_funcs, get_mu_vectorized, get_translate_dep, get_adjust, get_mu_adjust
 from pdgfits.func_factory import ALLOWED_EQUATION_TYPES
 from pdgfits.corr_mat import get_corr_mat
 from pdgfits.build_chi2 import build_chi2
-from pdgfits.param_maps import build_param_map_sigmoid, build_param_map_softmax, get_decay_info
+from pdgfits.param_maps import (
+    build_param_map_sigmoid,
+    build_param_map_softmax,
+    build_param_map_scaled,
+    get_decay_info,
+)
+
+
+def _condition_seed_units(parameters, fit_df, rel_df, meas_df, param_init, skip_idxs=None):
+    """Put seeds with obvious display-unit mismatches into parsed-measurement units."""
+    skip_idxs = set() if skip_idxs is None else set(int(i) for i in skip_idxs)
+    param_init = jnp.array(param_init, dtype=jnp.float64)
+    param_idx = {p: i for i, p in enumerate(parameters)}
+
+    for idx, param in enumerate(parameters):
+        if idx in skip_idxs:
+            continue
+
+        direct = np.asarray(meas_df.loc[meas_df['node'] == param, 'value'], dtype=np.float64)
+        if len(direct) == 0:
+            continue
+
+        seed = float(param_init[idx])
+        target_scale = float(np.nanmedian(np.abs(direct)))
+        if not np.isfinite(seed) or not np.isfinite(target_scale) or target_scale == 0:
+            continue
+
+        seed_abs = abs(seed)
+        if seed_abs == 0:
+            if target_scale >= 1e4:
+                param_init = param_init.at[idx].set(float(np.nanmedian(direct)))
+            continue
+
+        ratio = target_scale / seed_abs
+        if ratio >= 1e4 or ratio <= 1e-4:
+            param_init = param_init.at[idx].set(
+                seed * 10.0 ** np.round(np.log10(ratio))
+            )
+
+    for lifetime_node in fit_df.loc[fit_df['type'] == 'lifetime', 'node']:
+        width_params = rel_df.loc[
+            rel_df['node'] == lifetime_node, 'parameter_key'
+        ].dropna().unique()
+        if len(width_params) != 1 or width_params[0] not in param_idx:
+            continue
+
+        direct = meas_df.loc[meas_df['node'] == lifetime_node, 'value']
+        if len(direct) == 0:
+            continue
+
+        lifetime_scale = float(np.nanmedian(np.abs(np.asarray(direct, dtype=np.float64))))
+        if not np.isfinite(lifetime_scale) or lifetime_scale == 0:
+            continue
+
+        idx = param_idx[width_params[0]]
+        seed = float(param_init[idx])
+        target_seed = 1.0 / lifetime_scale
+        if not np.isfinite(seed) or not np.isfinite(target_seed):
+            continue
+
+        seed_abs = abs(seed)
+        if seed_abs == 0 or target_seed / seed_abs >= 1e4 or target_seed / seed_abs <= 1e-4:
+            param_init = param_init.at[idx].set(target_seed)
+
+    return param_init
+
+
+def _large_coordinate_scale_info(parameters, param_init, skip_idxs=None):
+    """Return linear optimizer scales for large non-decay coordinates."""
+    skip_idxs = set() if skip_idxs is None else set(int(i) for i in skip_idxs)
+    scale_idxs = []
+    scales = []
+
+    for idx, seed in enumerate(np.asarray(param_init, dtype=np.float64)):
+        if idx in skip_idxs or not np.isfinite(seed):
+            continue
+        scale = abs(seed)
+        if scale > 1e4:
+            scale_idxs.append(idx)
+            scales.append(scale)
+
+    return np.array(scale_idxs, dtype=int), np.array(scales, dtype=np.float64)
+
+
+def _run_unconstrained_scipy(scipy_obj, scipy_value, scipy_hessp, x0):
+    """Trust-region solve with a simplex escape, returning the best attempt."""
+    start_fun = scipy_value(x0)
+    best = OptimizeResult(
+        x=np.array(x0, dtype=np.float64),
+        fun=start_fun,
+        success=False,
+        message='initial point (all scipy attempts failed)',
+    )
+
+    def is_finite_result(result):
+        return (
+            result is not None
+            and hasattr(result, 'fun')
+            and np.isfinite(result.fun)
+            and np.all(np.isfinite(result.x))
+        )
+
+    def update_best(result):
+        nonlocal best
+        if not is_finite_result(result):
+            return
+
+        tied = result.fun <= best.fun + max(1e-8, 1e-10 * abs(best.fun))
+        better = result.fun < best.fun
+        better_status = tied and bool(result.success) and not bool(best.success)
+        if better or better_status:
+            best = result
+
+    def run_trust(start):
+        try:
+            return scipy_minimize(
+                scipy_obj,
+                start,
+                method='trust-ncg',
+                jac=True,
+                hessp=scipy_hessp,
+                options={'maxiter': 1000},
+            )
+        except (FloatingPointError, ValueError, np.linalg.LinAlgError) as exc:
+            return OptimizeResult(
+                x=np.array(start, dtype=np.float64),
+                fun=np.inf,
+                success=False,
+                message=f'trust-ncg failed: {exc}',
+            )
+
+    trust = run_trust(x0)
+    update_best(trust)
+
+    trust_stalled = (
+        not is_finite_result(trust)
+        or (not trust.success)
+        or trust.fun >= start_fun - 1e-8
+    )
+    if trust_stalled:
+        bfgs_start = best.x if np.isfinite(best.fun) else x0
+        bfgs = scipy_minimize(
+            scipy_obj,
+            bfgs_start,
+            method='BFGS',
+            jac=True,
+            options={'maxiter': max(1000, 1000 * len(x0))},
+        )
+        update_best(bfgs)
+        if is_finite_result(bfgs):
+            update_best(run_trust(bfgs.x))
+
+    if trust_stalled and not best.success:
+        nm_start = best.x if np.isfinite(best.fun) else x0
+        nm = scipy_minimize(
+            scipy_value,
+            nm_start,
+            method='Nelder-Mead',
+            options={
+                'adaptive': True,
+                'maxiter': max(1000, 100 * len(x0)),
+                'xatol': 1e-5,
+                'fatol': 1e-5,
+            },
+        )
+        update_best(nm)
+        if is_finite_result(nm):
+            update_best(run_trust(nm.x))
+
+    return best
+
+
+def _finite_scipy_result(result):
+    return (
+        result is not None
+        and hasattr(result, 'fun')
+        and hasattr(result, 'x')
+        and np.isfinite(result.fun)
+        and np.all(np.isfinite(result.x))
+    )
+
+
+def _run_constrained_scipy(scipy_obj, scipy_value, scipy_hessp, x0,
+                           bounds, constraints):
+    """Constrained solve from the supplied seed, returning the best attempt."""
+    finite_starts = []
+    start = np.array(x0, dtype=np.float64)
+    if np.all(np.isfinite(start)):
+        finite_starts.append(start)
+
+    if len(finite_starts) == 0:
+        return OptimizeResult(
+            x=np.array(x0, dtype=np.float64),
+            fun=np.inf,
+            success=False,
+            message='no finite constrained scipy start',
+        )
+
+    start_fun = scipy_value(finite_starts[0])
+    best = OptimizeResult(
+        x=finite_starts[0].copy(),
+        fun=start_fun,
+        success=False,
+        message='initial point (all constrained scipy attempts failed)',
+    )
+
+    def update_best(result):
+        nonlocal best
+        if not _finite_scipy_result(result):
+            return
+
+        tied = result.fun <= best.fun + max(1e-8, 1e-10 * abs(best.fun))
+        better = result.fun < best.fun
+        better_status = tied and bool(result.success) and not bool(best.success)
+        if better or better_status:
+            best = result
+
+    def run_slsqp(start):
+        try:
+            return scipy_minimize(
+                scipy_obj,
+                start,
+                method='SLSQP',
+                jac=True,
+                bounds=bounds,
+                constraints=constraints,
+                options={'maxiter': 1000, 'ftol': 1e-10},
+            )
+        except (FloatingPointError, ValueError, np.linalg.LinAlgError) as exc:
+            return OptimizeResult(
+                x=np.array(start, dtype=np.float64),
+                fun=np.inf,
+                success=False,
+                message=f'SLSQP failed: {exc}',
+            )
+
+    def run_trust_constr(start):
+        try:
+            return scipy_minimize(
+                scipy_obj,
+                start,
+                method='trust-constr',
+                jac=True,
+                hessp=scipy_hessp,
+                bounds=bounds,
+                constraints=constraints,
+                options={'maxiter': 1000},
+            )
+        except (FloatingPointError, TypeError, ValueError, np.linalg.LinAlgError) as exc:
+            return OptimizeResult(
+                x=np.array(start, dtype=np.float64),
+                fun=np.inf,
+                success=False,
+                message=f'trust-constr failed: {exc}',
+            )
+
+    for start in finite_starts:
+        result = run_slsqp(start)
+        update_best(result)
+        trust_result = run_trust_constr(start)
+        update_best(trust_result)
+        if _finite_scipy_result(result) and not result.success:
+            update_best(run_trust_constr(result.x))
+
+    if not best.success:
+        update_best(run_trust_constr(best.x))
+
+    return best
+
+
+def _run_minuit_candidate(chi2_val, chi2_grad, x0, constrained, decay_param_idxs, fixed_idx):
+    m = Minuit(chi2_val, x0, grad=chi2_grad)
+    m.errordef = 1
+    m.strategy = 0
+
+    if constrained and decay_param_idxs is not None:
+        for i in decay_param_idxs:
+            m.limits[int(i)] = (0, 1)
+
+    m.migrad()
+    m.simplex()
+    m.migrad()
+    m.simplex()
+    m.migrad()
+    m.simplex()
+    m.migrad()
+    m.hesse()
+
+    if fixed_idx is not None:
+        m.fixed[fixed_idx] = True
+        m.hesse()
+
+    return m
 
 
 def run_fit(label, verbose=True, optimizer='minuit', fit_space='unconstrained'):
@@ -20,14 +312,15 @@ def run_fit(label, verbose=True, optimizer='minuit', fit_space='unconstrained'):
 
     Returns a dict with fit results, or None if the fit was skipped.
 
-    Keys:
-        label, algorithm, parameters, nodes,
+    Keys (same set as run_avg(); keys not applicable to fits are None):
+        node, label, algorithm, parameters, nodes,
         param_values, fitted_values, chi2_min,
-        chi2, chi2_grad,
+        n_meas, error_n, error_p,
+        chi2, chi2_open, chi2_grad,
         fitted_params_to_params, params_to_fitted_params,
-        node_funcs, parameter_funcs,
-        meas_df, rel_df, fit_df, mu,
-        covariance
+        node_funcs, parameter_funcs, mu,
+        meas_df, rel_df, fit_df,
+        covariance, fit_valid, hesse_accurate
     """
     algorithm, measurement_type, fit_df, rel_df, meas_df, corr_df, fit_seed_df, tree_df = fit_queries(label, verbose=False)
 
@@ -56,13 +349,13 @@ def run_fit(label, verbose=True, optimizer='minuit', fit_space='unconstrained'):
 
     node_funcs = get_node_funcs(nodes, parameters, fit_df, rel_df)
     parameter_funcs = get_parameter_funcs(parameters)
-    meas_funcs = get_meas_funcs(dict(zip(nodes, node_funcs)), dict(zip(parameters, parameter_funcs)), meas_df)
-    mu = get_mu(meas_funcs)
+    mu = get_mu_vectorized(parameters, nodes, meas_df, fit_df, rel_df)
 
     if verbose and any(d is not None for d in dep_meas_data):
         print('Dependent measurements found, these will be accounted for.')
     translate_dep = get_translate_dep(dep_meas_data, parameters, nodes, parameter_funcs, node_funcs)
     adjust = get_adjust(adjust_data, parameters, nodes, parameter_funcs, node_funcs)
+    mu_adjust = get_mu_adjust(mu, adjust, translate_dep)
 
     y = jnp.array(meas_df['value'], dtype=jnp.float64)
     error_n = jnp.array(meas_df['error_n'], dtype=jnp.float64)
@@ -97,27 +390,69 @@ def run_fit(label, verbose=True, optimizer='minuit', fit_space='unconstrained'):
         fixed_idx = None
         decay_param_idxs = None
 
-    chi2, chi2_grad, chi2_val, chi2_open = build_chi2(
-        y, mu, error_n, error_p, corr_mat_inv, fitted_params_to_params,
-        translate_dep=translate_dep, adjust=adjust
-    )
-
-    chi2_val_and_grad = jax.jit(jax.value_and_grad(chi2))
-    chi2_hessian = jax.hessian(chi2)
-
     param_init = jnp.array(
         [fit_seed_df[fit_seed_df['parameter_key'] == p]['seed'].iloc[0] for p in parameters],
         dtype=jnp.float64
     )
 
     if decay_param_idxs is not None:
+        # Decay (branching-fraction) seeds must be in proportion units in (0,1),
+        # but the DB stores some in percent. A proportion is never > 1, so a seed
+        # exceeding 1 flags a non-proportion (almost always percent) entry. The
+        # fix differs by fit type, mirroring the PDG FORTRAN (sbrfit.f):
+        #   - is_br (single-particle, sum-to-1 / softmax): always renormalize by
+        #     the sum (PDG's SUM_TO_1 branch, sbrfit.f:697-716). This enforces the
+        #     sum-to-1 starting point and absorbs percent entries as a side effect.
+        #   - is_bru (multi-particle BR / BRU, sigmoid): branching fractions are
+        #     NOT constrained to sum to 1 (some decays aren't fit parameters), so
+        #     dividing by the sum would distort them. Instead convert percent ->
+        #     proportion by dividing any group with a >1 seed by 100. (PDG tolerates
+        #     raw percent seeds because its Gauss-Newton fit is robust to the start
+        #     point; our sigmoid reparametrization requires inputs in (0,1).)
         for particle in particles:
             bool_select = np.array([p.startswith(particle + '.') for p in parameters])
-            decay_seed_sum = param_init[bool_select].sum()
-            if decay_seed_sum >= 1:
-                print(f'rescaling {particle} decay fit seed sum down to 1')
-                param_init = param_init.at[bool_select].set(param_init[bool_select] / decay_seed_sum)
-            param_init = param_init.at[bool_select].set(jnp.clip(param_init[bool_select], 1e-6, 1 - 1e-6))
+            if not bool_select.any():
+                continue
+            decay_seeds = param_init[bool_select]
+            if is_br:
+                decay_seed_sum = decay_seeds.sum()
+                if decay_seed_sum > 0:
+                    print(f'normalizing {particle} decay fit seeds to sum to 1')
+                    param_init = param_init.at[bool_select].set(decay_seeds / decay_seed_sum)
+            elif decay_seeds.max() > 1:
+                print(f'converting {particle} decay fit seeds from percent to proportion')
+                decay_seeds = decay_seeds / 100
+                param_init = param_init.at[bool_select].set(decay_seeds)
+            param_init = param_init.at[bool_select].set(
+                jnp.clip(param_init[bool_select], 1e-6, 1 - 1e-6)
+            )
+
+    param_init = _condition_seed_units(
+        parameters, fit_df, rel_df, meas_df, param_init, skip_idxs=decay_param_idxs
+    )
+
+    scale_idxs, scales = _large_coordinate_scale_info(
+        parameters, param_init, skip_idxs=decay_param_idxs
+    )
+
+    if len(scale_idxs) > 0:
+        fitted_params_to_params, params_to_fitted_params = build_param_map_scaled(
+            fitted_params_to_params, params_to_fitted_params, scale_idxs, scales
+        )
+        if verbose:
+            scaled = ', '.join(
+                f'{parameters[i]} / {scale:.3g}'
+                for i, scale in zip(scale_idxs, scales)
+            )
+            print(f'scaling fitted coordinates: {scaled}')
+
+    chi2, chi2_grad, chi2_val, chi2_open = build_chi2(
+        y, mu_adjust, error_n, error_p, corr_mat_inv, fitted_params_to_params,
+    )
+
+    chi2_val_and_grad = jax.jit(jax.value_and_grad(chi2))
+    chi2_hessp = jax.jit(lambda x, p: jax.jvp(jax.grad(chi2), (x,), (p,))[1])
+    chi2_hessian = jax.hessian(chi2)
 
     fitted_param_init = params_to_fitted_params(param_init)
 
@@ -135,15 +470,28 @@ def run_fit(label, verbose=True, optimizer='minuit', fit_space='unconstrained'):
             val, grad = chi2_val_and_grad(jnp.array(x, dtype=jnp.float64))
             return float(val), np.array(grad, dtype=np.float64)
 
-        x0 = np.array(fitted_param_init, dtype=np.float64)
+        def scipy_value(x):
+            return float(chi2(jnp.array(x, dtype=jnp.float64)))
 
-        scipy_method = 'Newton-CG'
+        def scipy_hessp(x, p):
+            hvp = np.array(
+                chi2_hessp(
+                    jnp.array(x, dtype=jnp.float64),
+                    jnp.array(p, dtype=jnp.float64),
+                ),
+                dtype=np.float64,
+            )
+            if not np.all(np.isfinite(hvp)):
+                raise FloatingPointError('non-finite Hessian-vector product')
+            return hvp
+
+        scipy_method = 'trust-ncg'
         scipy_bounds = None
         scipy_constraints = []
 
         if constrained and decay_param_idxs is not None:
             scipy_method = 'SLSQP'
-            n = len(x0)
+            n = len(fitted_param_init)
             lb = np.full(n, -np.inf)
             ub = np.full(n, np.inf)
             for i in decay_param_idxs:
@@ -156,8 +504,18 @@ def run_fit(label, verbose=True, optimizer='minuit', fit_space='unconstrained'):
                     A[0, int(i)] = 1.0
                 scipy_constraints.append(LinearConstraint(A, 1.0, 1.0))
 
-        result = scipy_minimize(scipy_obj, x0, method=scipy_method, jac=True,
-                                bounds=scipy_bounds, constraints=scipy_constraints)
+        x0 = np.array(fitted_param_init, dtype=np.float64)
+        if scipy_method == 'trust-ncg':
+            result = _run_unconstrained_scipy(scipy_obj, scipy_value, scipy_hessp, x0)
+        else:
+            result = _run_constrained_scipy(
+                scipy_obj,
+                scipy_value,
+                scipy_hessp,
+                x0,
+                scipy_bounds,
+                scipy_constraints,
+            )
         if verbose:
             print(f'scipy success: {result.success}, message: {result.message}')
         chi2_min = float(result.fun)
@@ -166,26 +524,9 @@ def run_fit(label, verbose=True, optimizer='minuit', fit_space='unconstrained'):
         hess = chi2_hessian(fitted_values)
         covariance = 2 * jnp.linalg.pinv(hess)
     else:
-        m = Minuit(chi2_val, fitted_param_init, grad=chi2_grad)
-        m.errordef = 1
-        m.strategy = 0
-
-        if constrained and decay_param_idxs is not None:
-            for i in decay_param_idxs:
-                m.limits[int(i)] = (0, 1)
-
-        m.migrad()
-        m.simplex()
-        m.migrad()
-        m.simplex()
-        m.migrad()
-        m.simplex()
-        m.migrad()
-        m.hesse()
-
-        if fixed_idx is not None:
-            m.fixed[fixed_idx] = True
-            m.hesse()
+        m = _run_minuit_candidate(
+            chi2_val, chi2_grad, fitted_param_init, constrained, decay_param_idxs, fixed_idx
+        )
 
         chi2_min = float(m.fval)
         fitted_values = jnp.array(m.values, dtype=jnp.float64)
@@ -198,6 +539,7 @@ def run_fit(label, verbose=True, optimizer='minuit', fit_space='unconstrained'):
             print(f'fit valid: {m.valid}, errors from hessian accurate: {m.accurate}')
 
     return {
+        'node': None,
         'label': label,
         'algorithm': algorithm,
         'parameters': parameters,
@@ -205,6 +547,9 @@ def run_fit(label, verbose=True, optimizer='minuit', fit_space='unconstrained'):
         'param_values': param_values,
         'fitted_values': fitted_values,
         'chi2_min': chi2_min,
+        'n_meas': None,
+        'error_n': None,
+        'error_p': None,
         'chi2': chi2,
         'chi2_open': chi2_open,
         'chi2_grad': chi2_grad,
@@ -212,10 +557,10 @@ def run_fit(label, verbose=True, optimizer='minuit', fit_space='unconstrained'):
         'params_to_fitted_params': params_to_fitted_params,
         'node_funcs': node_funcs,
         'parameter_funcs': parameter_funcs,
+        'mu': mu,
         'meas_df': meas_df,
         'rel_df': rel_df,
         'fit_df': fit_df,
-        'mu': mu,
         'covariance': covariance,
         'fit_valid': fit_valid,
         'hesse_accurate': hesse_accurate,

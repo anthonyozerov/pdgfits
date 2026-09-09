@@ -15,3 +15,24 @@ The code unifies *averages* and *fits* in a likelihood-based framework. Both ave
 ## Usage
 
 To run all of the averages, run `run_avgs.py`. To run all of the fits, run `run_fits.py`.
+
+## Offline snapshots
+
+To work offline, capture the query outputs once while the PDG DB tunnel is
+available:
+
+```bash
+python -m pdgfits.snapshot capture --out data/pdg-snapshot
+```
+
+Then point the existing code at that snapshot:
+
+```bash
+PDGFITS_DATA_BACKEND=snapshot \
+PDGFITS_SNAPSHOT_DIR=data/pdg-snapshot \
+python -m pdgfits.run_fits --fit_label eta_958
+```
+
+Snapshots store only the DataFrame outputs used by `query.py`, plus the extra
+PDG-value and nuisance-correlation lookups that preprocessing needs. The live DB
+backend remains the default.

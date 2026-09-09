@@ -1,0 +1,15 @@
+minuit fits=81  scipy fits=81  union=81
+
+=== scipy fits with success: False  (0) ===
+
+=== minuit fits flagged invalid (0) ===
+
+=== chi2 differs > 1e-03 relative  (1) ===
+  label                               minuit       scipy  rel.diff
+  D0-topological                    1.43e-07    6.48e-11   1.0e+00
+
+=== summary ===
+chi2 agree (rel<= 1e-03): 80/81
+chi2 differ:                 1
+scipy success:False:         0
+minuit invalid:              0

@@ -1,0 +1,61 @@
+{
+  "audit_toy": {
+    "best_unconstrained_chi2": 76.22910435883735,
+    "best_unconstrained_improvement_vs_reported": 0.012242773842658039,
+    "best_unconstrained_optimizer": "scipy",
+    "best_unconstrained_start": "profile_truth_solution",
+    "max_abs_decay_fitted_coord_mle": 91.50914512767227,
+    "max_decay_param_mle": 0.05242343736645544,
+    "min_decay_param_mle": 3.478448910221638e-07,
+    "profile_consistency_failure_after_globality_check": false,
+    "profile_consistency_failure_reported": true,
+    "profile_method_audit_best": "clip_decay_floor_1e-05",
+    "profile_method_production": "SLSQP",
+    "profile_minus_audit_best": 2.1316282072803006e-11,
+    "profile_projected_grad_norm_audit_best": 2.1003709003042535e-06,
+    "profile_projected_grad_norm_production": 0.002125214416619866,
+    "profile_scaled_constraint_violation_audit_best": 6.545782115617852e-14,
+    "profile_scaled_constraint_violation_production": 7.273091239575391e-15,
+    "profile_true_chi2_audit_best": 76.24028994920884,
+    "profile_true_chi2_production": 76.24028994923016,
+    "profile_true_delta_chi2_audit_best": -0.0010571834711612382,
+    "profile_true_delta_chi2_production": -0.0010571834498449562,
+    "q_using_best_unconstrained": 0.011185590392813083,
+    "runtime_sec": 45.28262194400304,
+    "seed": 2026162602,
+    "status": "ok",
+    "target_std_baseline": 0.015264802654805856,
+    "toy_chi2_at_truth_params": 87.56169902055956,
+    "toy_chi2_min_reported": 76.24134713268,
+    "toy_index": 84,
+    "toy_target_minus_truth": -0.001603038723214878,
+    "toy_target_mle": 0.28920216871277615,
+    "truth_target": 0.29080520743599103
+  },
+  "audit_toy_best_profile_chi2": 76.24028994920884,
+  "audit_toy_best_unconstrained_chi2": 76.22910435883735,
+  "endpoint_max_abs_residual_vs_best_unconstrained": 0.016642273838272104,
+  "endpoint_max_abs_residual_vs_reported_refit": 0.004399499995614065,
+  "metadata": {
+    "audit_toy": 84,
+    "base_seed": 2026062518,
+    "case": "B0::S042B95",
+    "dgp": "split_normal_pdg_resid",
+    "endpoint_residual_tol": 0.005,
+    "nearby_toys": [
+      83,
+      84,
+      85
+    ]
+  },
+  "negative_q_after_globality_check_count": 0,
+  "negative_q_reported_count": 1,
+  "overall_best_profile_chi2": 60.75918289220302,
+  "overall_best_unconstrained_chi2": 60.159125510583586,
+  "row_counts": {
+    "endpoint_rows": 2,
+    "profile_rows": 13,
+    "reproduction_rows": 3,
+    "unconstrained_rows": 23
+  }
+}

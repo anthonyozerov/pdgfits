@@ -1,0 +1,81 @@
+{
+  "case_summaries": [
+    {
+      "case_id": "fit_b0_s042b95",
+      "chart_saturation_toys": 8,
+      "endpoint_contains_truth_count": 1,
+      "endpoint_contains_truth_fraction": 0.5,
+      "max_abs_endpoint_residual": 0.0037136856599886414,
+      "min_decay_param_min": 2.6875288646809487e-07,
+      "n_endpoint_toys": 2,
+      "n_ok_toys": 8,
+      "q_le_1_count": 6,
+      "q_le_1_fraction": 0.75,
+      "q_max": 1.675371750841606,
+      "q_mean": 0.45949978582497675,
+      "q_median": 0.12916857410782256,
+      "q_min": 0.007344380392353855,
+      "stratum": "boundary_tiny_parameter"
+    },
+    {
+      "case_id": "fit_b0s_s08637",
+      "chart_saturation_toys": 0,
+      "endpoint_contains_truth_count": 2,
+      "endpoint_contains_truth_fraction": 1.0,
+      "max_abs_endpoint_residual": 0.004777262322258835,
+      "min_decay_param_min": 1.6249177572376433e-05,
+      "n_endpoint_toys": 2,
+      "n_ok_toys": 8,
+      "q_le_1_count": 5,
+      "q_le_1_fraction": 0.625,
+      "q_max": 3.9887389475122923,
+      "q_mean": 1.364297227919932,
+      "q_median": 0.7339396142878893,
+      "q_min": 0.019324225175232357,
+      "stratum": "asymmetric_profile_shape"
+    },
+    {
+      "case_id": "fit_g2000_k002m",
+      "chart_saturation_toys": 0,
+      "endpoint_contains_truth_count": 1,
+      "endpoint_contains_truth_fraction": 0.5,
+      "max_abs_endpoint_residual": 0.0039100647352805495,
+      "min_decay_param_min": null,
+      "n_endpoint_toys": 2,
+      "n_ok_toys": 8,
+      "q_le_1_count": 6,
+      "q_le_1_fraction": 0.75,
+      "q_max": 2.5482216535317033,
+      "q_mean": 0.8368283199684856,
+      "q_median": 0.4387968284457592,
+      "q_min": 0.00035901177460262446,
+      "stratum": "clean_control"
+    }
+  ],
+  "expected_chisq1_median": 0.454936423119572,
+  "expected_chisq1_q_le_1_fraction": 0.6826894921370859,
+  "limitations": [
+    "local Gaussian toys use symmetrized errors at zero residual, not the full asymmetric interpolation as a generative distribution",
+    "correlation matrices are eigenvalue-clipped only for toy generation",
+    "toy counts are intentionally too small for coverage claims",
+    "boundary activity is recorded at the toy MLE; constrained profile points do not expose optimized coordinates"
+  ],
+  "metadata": {
+    "base_seed": 2026062515,
+    "bracket_sigmas": 3.0,
+    "case_ids": [
+      "fit_b0_s042b95",
+      "fit_b0s_s08637",
+      "fit_g2000_k002m"
+    ],
+    "command_cwd": "/root/pdgfits-private",
+    "elapsed_sec": 87.79652519099182,
+    "endpoint_residual_tol": 0.005,
+    "endpoint_toys_per_case": 2,
+    "max_runtime_sec": 600.0,
+    "toys_per_case": 8
+  },
+  "n_endpoint_rows": 12,
+  "n_failure_rows": 0,
+  "n_toy_rows": 24
+}
