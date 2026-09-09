@@ -86,3 +86,16 @@ def test_cross_node_correlations_allow_different_scales():
                       options={'xatol': 1e-10, 'fatol': 1e-10})
     assert direct.success
     assert_allclose(result['scales'], np.exp(direct.x), rtol=1e-6)
+
+
+def test_correlated_reml_reaches_boundary_solution():
+    # A relative-objective stop can occur before the scale score is small here.
+    y = np.array([.314179299187676, -.9146405017445695, 1.5224506738854078,
+                  .3230076366592777, -1.696775859686525, -.6923469271064584])
+    x = np.repeat([[1., 0], [0, 1.], [1., 1.]], 2, axis=0)
+    v = np.eye(6)
+    v[np.ix_([0, 2, 4], [0, 2, 4])] = .6*np.eye(3)+.4*np.ones((3, 3))
+    fit = fit_linear_scales(y, x, v, np.repeat(['a', 'b', 'sum'], 2))
+    assert_allclose(fit['scales'][1:], [1, 1], atol=1e-8)
+    assert fit['restricted_nll'] < 2.594
+    assert fit['score_residual'] < 1e-6

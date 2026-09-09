@@ -61,3 +61,28 @@ Validation on this addition: 170 offline tests passed (two skipped), and all
 369 saved snapshot cases exactly matched the pre-addition results, including
 fit values, covariances and profile endpoints. The two real mass-fit examples
 also have explicitly checked linear measurement maps and symmetric inputs.
+
+## Comparison with the PDG prescription
+
+The [2026 introduction, §5.2](https://pdg.lbl.gov/2026/reviews/rpp2026-rev-rpp-intro.pdf)
+still documents the separate-pull fit formula, the average precision cutoff, and
+original-center reporting. `pdg_scaling.py` implements these baselines, using the
+local `savg.f`, `sscafac.f` and `sbrfit.f` to fix implementation details.
+`MAXTRY=1`, the fit scaling threshold is 1.001, and the pull guard is 1e-5.
+Correlated blocks use the legacy rank-one covariance adjustment. Singular
+measurement-dependency matrices and nonlinear asymmetric fit-error propagation
+are not implemented by this linear comparator.
+
+The new average agrees with the original Fortran numerical routines on all
+2,449 modern quantities: largest mean difference 6.9e-13 quoted-error units;
+relative scaled-error/scale differences below 5.8e-8 (the Fortran scale uses
+single precision). The original numerical routines were compiled unchanged
+with a minimal input COMMON-block harness.
+
+Across seven eligible real mass fits, the PDG and REML conditional errors are
+usually close: median ratio 1.00, largest difference about 17% with all inputs.
+The evidence does not support replacing the existing separate-pull formula
+wholesale. Correlation modification and original-center reporting are distinct
+issues, and the simulations show regimes in which they matter substantially.
+Excluding weak inputs can help or hurt under explicitly different sampling models;
+no exclusions is retained as the simpler primary alternative for further study.

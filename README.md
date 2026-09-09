@@ -56,3 +56,11 @@ asymmetric objective. Returned covariance is conditional on the estimated scales
 See [the node-scale note](notes/node-scales.md) for the exact assumptions and
 remaining work. The companion `birge.linear_birge` returns residual diagnostics
 and their variance-mixing matrix for independent nodes or correlated blocks.
+
+`pdg_scaling.pdg_average` and `pdg_scaling.pdg_linear_fit` provide comparison
+baselines for the PDG prescriptions. The first includes the existing asymmetric
+average iteration and scale-only exclusion. The second covers linear symmetric
+fits, separate pull scales, one exclusion/refit pass, original-center reporting,
+and the existing nonsingular correlation-block adjustment. Use `exclude_weak=False`
+to compare no exclusions. These are explicit comparator APIs, not automatic changes
+to the main fitting pipeline. See [the method note](notes/node-scales.md).

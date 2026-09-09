@@ -169,7 +169,7 @@ def fit_linear_scales(y, design, covariance, nodes):
 
     fit = minimize(objective, np.zeros(len(groups)), jac=True, method='L-BFGS-B',
                    bounds=[(0, None)] * len(groups),
-                   options={'ftol': 1e-12, 'gtol': 1e-7, 'maxiter': 500})
+                   options={'ftol': 1e-14, 'gtol': 1e-7, 'maxiter': 500})
     value, gradient, q, degrees, current = evaluate(fit.x)
     projected = np.where(fit.x <= 1e-8, np.minimum(gradient, 0), gradient)
     if not fit.success or np.max(np.abs(projected), initial=0) > 1e-5:
