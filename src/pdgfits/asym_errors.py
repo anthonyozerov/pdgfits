@@ -443,10 +443,12 @@ def calc_asym_errors(fit, targets=None):
     functions = []
     valid_targets = []
     for target in targets:
-        if target in nodes:
-            functions.append(node_funcs[nodes.index(target)])
-        elif target in parameters:
+        # A named physical parameter takes precedence over an auxiliary
+        # relationship carrying the same ID (the eta width is such a case).
+        if target in parameters:
             functions.append(parameter_funcs[parameters.index(target)])
+        elif target in nodes:
+            functions.append(node_funcs[nodes.index(target)])
         else:
             print(f'Warning: {target} not found in nodes or parameters, skipping.')
             continue

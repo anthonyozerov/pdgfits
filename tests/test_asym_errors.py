@@ -16,6 +16,22 @@ from pdgfits.asym_errors import (
 from pdgfits.avg import run_avg
 
 
+def test_named_parameter_profile_wins_over_same_named_relationship():
+    from pdgfits.asym_errors import calc_asym_errors
+    center = np.array([.2, .8])
+    fit = {'nodes': ['width'], 'parameters': ['width', 'other'],
+           'node_funcs': [lambda p: p[1]],
+           'parameter_funcs': [lambda p: p[0], lambda p: p[1]],
+           'fitted_params_to_params': lambda p: p,
+           'fitted_values': center, 'param_values': center,
+           'chi2': lambda p: jnp.sum(((p-jnp.asarray(center))/.1)**2),
+           'chi2_min': 0., 'covariance': np.eye(2)*.01}
+    result = calc_asym_errors(fit, ['width'])['width']
+    assert result['value'] == pytest.approx(.2)
+    assert result['error_n'] == pytest.approx(.1, abs=1e-6)
+    assert result['error_p'] == pytest.approx(.1, abs=1e-6)
+
+
 def test_boundary_endpoint_is_not_forced_to_cross_objective_level():
     root = find_profile_root(lambda x: (x-.1)**2, .1, 0., -2., 2., limits=(0., np.inf))
     assert root.lower.endpoint == 0.

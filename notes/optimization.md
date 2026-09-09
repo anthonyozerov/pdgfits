@@ -52,13 +52,22 @@ checks does not establish global optimality or frequentist coverage.
 
 The current sweep passes 81 locally scaled fits / 1,395 targets, 162 PDG scale
 variants / 2,790 targets, and all 2,647 averages (including 824 scalar refinements).
-The test suite passes 197 tests, with two optional live-database tests skipped.
+The test suite passes 198 tests, with two optional live-database tests skipped.
 All ordinary snapshot outputs in the 369-case comparison are unchanged. One
 auxiliary average, S041B41, exceeds the comparison's strict 1e-7 relative error
 tolerance by a factor of 2.12: its interval errors change by 2.12e-7 relatively
 after recovering the same minimum to 2.1e-13 in Q. Its independently checked
 endpoint Q residuals change by less than 7e-8 and remain within 0.005. This
 reviewed numerical-equivalence warning is retained in the report.
+
+The subsequent comparison with published intervals exposed one reporting error:
+`eta/S014W` names both a physical width parameter and an auxiliary relationship
+that sums branching fractions. Target selection now gives the physical parameter
+precedence. This is the only node/parameter name collision in the 81-fit snapshot.
+All eta targets were repeated without scaling, with local scales and with both
+PDG scale variants; the width is now correctly reported near 0.0013 MeV. The
+measurement objective and parameter estimates did not change. This small repair
+adds two production lines after the 448-line scaling/refitting simplification.
 
 The earlier **17.69×** result was measured at `e605082` against `51e2184` on
 45 matched successful ordinary fit/profile groups: 1,214.08 versus 68.65 seconds.

@@ -60,10 +60,10 @@
   },
   "snapshot_comparison_review": "One strict 1e-7 relative-error flag: S041B41 errors differ by 2.124e-7 after recovering the same corner minimum (Q differs by 2.06e-13). Its center changes by 2.25e-7 SE and endpoint Q residual changes by less than 7e-8. Both endpoints pass the independent 0.005 Q tolerance. All ordinary fit means, covariances, node values and checked profiles are unchanged. This is a reviewed numerical-equivalence warning, not a failed optimization.",
   "pytest": {
-    "passed": 197,
+    "passed": 198,
     "skipped": 2,
-    "skips": "optional live database tests",
-    "seconds": 35.23
+    "seconds": 15.15,
+    "skips": "optional live database tests"
   },
   "study_tests": {
     "passed": 15
@@ -80,8 +80,63 @@
   },
   "source_sha256": {
     "src/pdgfits/node_scales.py": "60255c9665d26bc324ca4c9402ce13b1df199b0869bcb4851866baba4505263e",
-    "src/pdgfits/refit.py": "cfcc1c9ab43679520dfa4045554de01de268ae51c8987708dff4469a09833d4b"
+    "src/pdgfits/refit.py": "cfcc1c9ab43679520dfa4045554de01de268ae51c8987708dff4469a09833d4b",
+    "src/pdgfits/asym_errors.py": "7cf1a5f301d6b8b8a1addba416c3f22d5156e160c44cd2be886dffd2c81aa675"
   },
   "raw_runs": "pdgstudy/.local/geometry-audit",
-  "coverage": "Not established by optimizer convergence; asymmetric and boundary local geometry is approximate and intervals condition on estimated scales"
+  "coverage": "Not established by optimizer convergence; asymmetric and boundary local geometry is approximate and intervals condition on estimated scales",
+  "target_reporting_fix": {
+    "reason": "Physical parameter takes precedence over an auxiliary relationship with the same ID. The only node/parameter collision across the 81 snapshot fits is eta/S014W. Previously the sum of five branching fractions was profiled under the width ID.",
+    "checks": [
+      {
+        "id": "fit:eta",
+        "targets": 36,
+        "corrected_width": {
+          "value": 0.0013078728046965295,
+          "error_n": 4.45832645004432e-05,
+          "error_p": 4.47891871268734e-05,
+          "lower_residual": -0.0024873126993156802,
+          "upper_residual": 0.002261470674589816
+        },
+        "max_other_target_relative_change": 0.0
+      },
+      {
+        "id": "scale:eta",
+        "targets": 36,
+        "corrected_width": {
+          "value": 0.0013119658580611467,
+          "error_n": 4.450894112763802e-05,
+          "error_p": 4.4720343852197196e-05,
+          "lower_residual": -0.002470354047343193,
+          "upper_residual": 0.002276401473405798
+        },
+        "max_other_target_relative_change": 0.0
+      },
+      {
+        "id": "pdg:eta:False",
+        "targets": 36,
+        "corrected_width": {
+          "value": 0.0013119608258430429,
+          "error_n": 4.450877310644926e-05,
+          "error_p": 4.472019073507925e-05,
+          "lower_residual": -0.002470286583683645,
+          "upper_residual": 0.002276348427276531
+        },
+        "max_other_target_relative_change": 0.0
+      },
+      {
+        "id": "pdg:eta:True",
+        "targets": 36,
+        "corrected_width": {
+          "value": 0.00131387007642092,
+          "error_n": 4.498395113411023e-05,
+          "error_p": 4.521657279773486e-05,
+          "lower_residual": -0.0026750054038462423,
+          "upper_residual": 0.0024926594833214466
+        },
+        "max_other_target_relative_change": 0.0
+      }
+    ],
+    "scope": "Means, measurement maps and optimizers unchanged; every eta target rerun with no scaling, local scaling and both PDG scale variants."
+  }
 }
