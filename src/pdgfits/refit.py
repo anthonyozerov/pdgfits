@@ -59,8 +59,6 @@ def prepare_refit(fit):
     def evaluate(z, values, scales):
         residual, jacobian = fit['chi2_open'].residual_value_jac(center + transform @ z, values, scales)
         return np.asarray(residual), np.asarray(jacobian) @ transform
-    def hessian(z, values, scales):
-        return transform.T @ np.asarray(fit['chi2_open'].hessian(center + transform @ z, values, scales)) @ transform
     def residual(z, values, scales):
         return fit['chi2_open'].residuals(jnp.asarray(center) + jnp.asarray(transform) @ z, values, scales)
     batch_objective = jax.jit(lambda z, values, scales:
@@ -104,9 +102,6 @@ def prepare_refit(fit):
                     multipliers = lsq_linear(normals.T, -gradient, bounds=(0, np.inf), tol=1e-12)
                     gradient += normals.T@multipliers.x
             return gradient
-
-        def optimality(x, r, jac):
-            return float(np.max(np.abs(projected_gradient(x, r, jac))))
 
         def knot_optimality(x):
             """Check the convex one-sided gradients at an asymmetric knot."""
@@ -152,9 +147,13 @@ def prepare_refit(fit):
         def check(candidate):
             nonlocal descent, descent_start
             r, jac = compute(candidate.x)
-            candidate.fun, candidate.jac = r, jac
+            # SciPy least_squares returns residuals in .fun; minimize returns
+            # a scalar. Use one result convention from this point onward.
+            candidate.fun = float(r @ r)
+            candidate.jac = jac
             corner = knot_optimality(candidate.x)
-            candidate.optimality = min(optimality(candidate.x, r, jac), corner)
+            gradient_norm = float(np.max(np.abs(projected_gradient(candidate.x, r, jac))))
+            candidate.optimality = min(gradient_norm, corner)
             if not np.isfinite(r).all():
                 return False
             if constraint is not None:
@@ -184,7 +183,8 @@ def prepare_refit(fit):
             return bool(candidate.success and not np.isfinite(corner)
                         and np.isfinite(descent) and descent <= 1e-7)
 
-        if not check(result) and prediction_jacobian is not None:
+        valid = check(result)
+        if not valid and prediction_jacobian is not None:
             # Coordinate searches can stall at an error-rule corner even when
             # there is descent ALONG the corner. Minimize on that surface once,
             # then check the full one-sided stationarity conditions.
@@ -202,10 +202,10 @@ def prepare_refit(fit):
                 polished = minimize(objective, result.x, jac=lambda z: 2*compute(z)[1].T@compute(z)[0],
                                      method='SLSQP', constraints=constraints,
                                      options={'ftol': 1e-11, 'maxiter': 1000})
-                if np.isfinite(polished.fun) and polished.fun <= result.fun@result.fun+1e-10:
-                    check(polished)
+                if np.isfinite(polished.fun) and polished.fun <= result.fun+1e-10:
+                    valid = check(polished)
                     result = polished
-        if not check(result):
+        if not valid:
             # One derivative-free fallback handles interpolation corners. Keep
             # the better feasible point; never accept a failed or descending fit.
             start = descent_start if descent is not None and descent > 0 else result.x
@@ -214,7 +214,7 @@ def prepare_refit(fit):
                         if constraint is None else
                         minimize(objective, start, method='COBYQA', constraints=constraint,
                                  options={'initial_tr_radius': .1, 'final_tr_radius': 1e-9, 'maxfev': 10000}))
-            if not check(fallback) or fallback.fun@fallback.fun > result.fun@result.fun+1e-7:
+            if not check(fallback) or fallback.fun > result.fun+1e-7:
                 failure = RuntimeError(f'Refit did not converge: {fallback.message}; '
                                        f'gradient={fallback.optimality:.3g}; descent={descent}')
                 failure.values, failure.scales = values, scales
@@ -222,14 +222,14 @@ def prepare_refit(fit):
                 raise failure
             result = fallback
         fitted_values = center + transform @ result.x
-        result.success = True
         answer = {'x': result.x, 'fitted_values': fitted_values,
-                  'chi2_min': float(result.fun @ result.fun), 'optimality': result.optimality,
+                  'chi2_min': float(result.fun), 'optimality': result.optimality,
                   'nfev': evaluations, 'descent_improvement': descent,
                   'preconditioner': transform @ np.linalg.pinv(result.jac.T @ result.jac) @ transform.T}
         if not full_output:
             return answer
-        curvature = np.asarray(hessian(result.x, values, scales))/2
+        hessian = np.asarray(fit['chi2_open'].hessian(fitted_values, values, scales))
+        curvature = (transform.T @ hessian @ transform) / 2
         if np.linalg.eigvalsh(curvature).min() <= 0:
             raise RuntimeError('Fitted mean has nonpositive curvature')
         covariance = transform @ np.linalg.inv(curvature) @ transform.T
@@ -240,7 +240,7 @@ def prepare_refit(fit):
         chi2 = jax.jit(lambda fp: fit['chi2_open'](fp, values, scales))
         answer.update(fit)
         answer.update(chi2=chi2, chi2_grad=jax.jit(jax.grad(chi2)),
-                      chi2_min=float(result.fun @ result.fun), fitted_values=fitted_values,
+                      chi2_min=float(result.fun), fitted_values=fitted_values,
                       param_values=fit['fitted_params_to_params'](fitted_values),
                       covariance=covariance, fit_valid=True, hesse_accurate=bool(smooth_interior),
                       input_scales=scales, refit_optimality=result.optimality,

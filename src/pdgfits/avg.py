@@ -1,9 +1,10 @@
+"""Average one node, profiling auxiliary inputs with the common fit objective."""
+
 import os
+import time
 
 import numpy as np
 import pandas as pd
-import jax
-import time
 
 from jax import numpy as jnp
 from iminuit import Minuit
@@ -58,16 +59,18 @@ def run_avg(node, meas_df_node, corr_df_node, skip_avg=False, contours=False, co
     adjust = get_adjust(adjust_data, parameters, nodes_list, parameter_funcs, node_funcs)
     mu_adjust = get_mu_adjust(mu, adjust, translate_dep)
 
-    # Use the mean of the main node's parsed measurements as the starting seed
-    fit_seed_df.loc[fit_seed_df['parameter_key'] == node, 'seed'] = np.nan
-    param_init = np.array(
-        [fit_seed_df[fit_seed_df['parameter_key'] == p]['seed'].iloc[0] for p in parameters],
-        dtype=np.float64,
-    )
-    seed_val = (float(meas_df['value'].mean()) if direct else
-                np.mean((meas_df['value']*adjust(param_init)+translate_dep(param_init))[meas_df['node'] == node]))
-    fit_seed_df = fit_seed_df.copy()
-    fit_seed_df.loc[fit_seed_df['parameter_key'] == node, 'seed'] = seed_val
+    # Initialize the primary value from corrected measurements; keep the
+    # auxiliary seeds supplied by preprocessing. Build the parameter vector once.
+    seeds = fit_seed_df.drop_duplicates('parameter_key').set_index('parameter_key')['seed']
+    param_init = seeds.loc[parameters].to_numpy(dtype=np.float64, copy=True)
+    primary_idx = parameters.index(node)
+    primary_mask = meas_df['node'] == node
+    param_init[primary_idx] = np.nan
+    if direct:
+        param_init[primary_idx] = float(meas_df['value'].mean())
+    else:
+        corrected = meas_df['value'] * adjust(param_init) + translate_dep(param_init)
+        param_init[primary_idx] = np.mean(corrected[primary_mask])
 
     y = jnp.array(meas_df['value'], dtype=jnp.float64)
     error_n = jnp.array(meas_df['error_n'], dtype=jnp.float64)
@@ -94,11 +97,6 @@ def run_avg(node, meas_df_node, corr_df_node, skip_avg=False, contours=False, co
         chi2, chi2_grad, chi2_val, chi2_open = build_chi2(
             y, mu_adjust, error_n, error_p, corr_mat_inv, lambda x: x, use_jit=not direct)
 
-    param_init = np.array(
-        [fit_seed_df[fit_seed_df['parameter_key'] == p]['seed'].iloc[0] for p in parameters],
-        dtype=np.float64,
-    )
-
     if not direct and not np.isfinite(chi2_val(param_init)):
         raise ValueError(f"Non-finite initial chi2 for {node}")
 
@@ -118,37 +116,31 @@ def run_avg(node, meas_df_node, corr_df_node, skip_avg=False, contours=False, co
         chi2_min = optimized['chi2_min']
     t1 = time.perf_counter()
 
-    primary_idx = parameters.index(node)
     val = float(param_values[primary_idx])
-
-    # Use heuristic measurement spans as the initial bracket for the binary search.
-    primary_mask = meas_df['node'] == node
-    adjustment = 1. if direct else np.asarray(adjust(param_values))
-    primary_error_p = np.asarray((adjustment*meas_df['error_p'])[primary_mask], dtype=np.float64)
-    primary_error_n = np.asarray((adjustment*meas_df['error_n'])[primary_mask], dtype=np.float64)
-    ub = val + 4 * float(np.max(primary_error_p))
-    lb = val - 4 * float(np.max(primary_error_n))
-
-    profile_chi2 = build_coordinate_profile_chi2(chi2, param_values, primary_idx, node,
-                                               covariance=None if direct else optimized['preconditioner'])
-    # The MLE point is feasible for the fixed-primary profile at val. Endpoint
-    # verification below exercises the profile solver where it matters.
-    base_chi2 = chi2_min if direct else float(chi2_val(jnp.array(param_values, dtype=jnp.float64)))
-    if base_chi2 > chi2_min + 1e-5:
-        raise RuntimeError(
-            f"Chi2 at fitted optimum for node {node} is {base_chi2}, "
-            f"above chi2_min {chi2_min}"
-        )
-
 
     t2 = time.perf_counter()
     if direct:
         error_p_result, error_n_result = scalar['error_p'], scalar['error_n']
         diagnostics = scalar['diagnostics']
+        profile_diagnostics = []
     else:
-        root = find_profile_root(profile_chi2, val, chi2_min, lb, ub)
+        # Start with spans of the corrected primary measurements, then profile
+        # auxiliary inputs at each trial value and check Delta Q = 1 endpoints.
+        adjustment = np.asarray(adjust(param_values))
+        primary_error_p = np.asarray((adjustment * meas_df['error_p'])[primary_mask], dtype=np.float64)
+        primary_error_n = np.asarray((adjustment * meas_df['error_n'])[primary_mask], dtype=np.float64)
+        lower = val - 4 * float(np.max(primary_error_n))
+        upper = val + 4 * float(np.max(primary_error_p))
+        profile_chi2 = build_coordinate_profile_chi2(
+            chi2, param_values, primary_idx, node, covariance=optimized['preconditioner'],
+        )
+        base_chi2 = float(chi2_val(jnp.array(param_values, dtype=jnp.float64)))
+        if base_chi2 > chi2_min + 1e-5:
+            raise RuntimeError(f'Chi2 at fitted optimum for {node} is {base_chi2}, above {chi2_min}')
+        root = find_profile_root(profile_chi2, val, chi2_min, lower, upper)
         error_p_result, error_n_result = root.upper.error, root.lower.error
         diagnostics = root.diagnostics()
+        profile_diagnostics = profile_chi2.diagnostics
     t3 = time.perf_counter()
 
     print(f"{node}: {val:.8g} +{error_p_result:.6g} -{error_n_result:.6g}")
@@ -184,7 +176,7 @@ def run_avg(node, meas_df_node, corr_df_node, skip_avg=False, contours=False, co
         'error_n': error_n_result,
         'error_p': error_p_result,
         'asym_error_diagnostics': diagnostics,
-        'profile_diagnostics': profile_chi2.diagnostics,
+        'profile_diagnostics': profile_diagnostics,
         'chi2': chi2,
         'chi2_open': chi2_open,
         'chi2_grad': chi2_grad,

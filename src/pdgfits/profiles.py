@@ -144,21 +144,6 @@ def build_constrained_profile_chi2(
         nonlocal last_x
         v = float(v)
         t_profile_start = time.perf_counter()
-        def make_constraint(exact_hess=False):
-            kwargs = {}
-            if exact_hess:
-                kwargs["hess"] = lambda x, multiplier: np.asarray(
-                    multiplier[0] * scaled_constraint_hess_jax(x, v),
-                    dtype=np.float64,
-                )
-            return NonlinearConstraint(
-                fun=lambda x: _as_float(scaled_constraint_value_jax(x, v)),
-                lb=0.0,
-                ub=0.0,
-                jac=lambda x: np.asarray(scaled_constraint_grad_jax(x, v), dtype=np.float64),
-                **kwargs,
-            )
-
         def scaled_violation(x):
             return max(abs(_as_float(constraint_value_jax(x, v))) / target_scale,
                        linear_violation(x))
@@ -300,26 +285,6 @@ def build_constrained_profile_chi2(
                 profile_method=profile_method,
             )
 
-        def maybe_keep_feasible_start(opt_result, x0):
-            x0_fun = chi2_np(x0)
-            if not np.isfinite(x0_fun) or scaled_violation(x0) > cons_tol:
-                return opt_result
-            if (not np.isfinite(opt_result.fun)) or (
-                x0_fun <= opt_result.fun + max(1e-8, 1e-10 * abs(opt_result.fun))
-            ):
-                is_best_fit_start = (
-                    np.linalg.norm(np.asarray(x0, dtype=np.float64) - fp_best)
-                    <= 1e-10 * max(np.linalg.norm(fp_best), 1.0)
-                )
-                return OptimizeResult(
-                    x=np.asarray(x0, dtype=np.float64),
-                    fun=x0_fun,
-                    success=is_best_fit_start,
-                    message="retained lower-chi2 feasible projected start",
-                    profile_method="projected-start",
-                )
-            return opt_result
-
         def solve_from(x0):
             candidates = []
             class StationaryPoint(Exception):
@@ -354,7 +319,18 @@ def build_constrained_profile_chi2(
                     options = ({"gtol": 1e-10, "xtol": 1e-10, "maxiter": 2000} if exact else
                                {"ftol": 1e-10, "maxiter": 2000, **(optimizer_options or {})})
                     try:
-                        constraints = [make_constraint(exact_hess=exact)]
+                        derivatives = {
+                            'jac': lambda x: np.asarray(scaled_constraint_grad_jax(x, v), dtype=np.float64),
+                        }
+                        if exact:
+                            derivatives['hess'] = lambda x, multiplier: np.asarray(
+                                multiplier[0] * scaled_constraint_hess_jax(x, v), dtype=np.float64,
+                            )
+                        target_constraint = NonlinearConstraint(
+                            lambda x: _as_float(scaled_constraint_value_jax(x, v)), 0., 0.,
+                            **derivatives,
+                        )
+                        constraints = [target_constraint]
                         if linear_constraint is not None:
                             constraints.append(linear_constraint)
                         result = minimize(chi2_np, np.asarray(x0), method=method, jac=chi2_grad_np,
@@ -365,7 +341,18 @@ def build_constrained_profile_chi2(
                     except (FloatingPointError, ValueError, np.linalg.LinAlgError) as exc:
                         result = OptimizeResult(x=np.asarray(x0), fun=chi2_np(x0), success=False,
                                                 message=f"{method} failed: {exc}")
-                    result = maybe_keep_feasible_start(result, x0)
+                    # A solver may move uphill from a feasible projected start.
+                    # Retain that start, but still require the checks below.
+                    start_value = chi2_np(x0)
+                    if (np.isfinite(start_value) and scaled_violation(x0) <= cons_tol
+                            and (not np.isfinite(result.fun)
+                                 or start_value <= result.fun + max(1e-8, 1e-10 * abs(result.fun)))):
+                        at_optimum = np.linalg.norm(np.asarray(x0) - fp_best) <= 1e-10 * max(np.linalg.norm(fp_best), 1.)
+                        result = OptimizeResult(
+                            x=np.asarray(x0, dtype=np.float64), fun=start_value, success=at_optimum,
+                            message='retained lower-chi2 feasible projected start',
+                            profile_method='projected-start',
+                        )
                     if not getattr(result, "profile_method", ""):
                         result.profile_method = "trust-constr-exact-hess" if exact else method
                     if polish and solver_options.use_kkt_polish:

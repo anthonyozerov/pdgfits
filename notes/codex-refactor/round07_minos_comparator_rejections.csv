@@ -1,3 +1,0 @@
-case_id,label_or_node,target,reason
-reject_b0_s042b95,B0,S042B95,"S042B95 is a relationship/node ratio target, not a Minuit coordinate. Running MINOS on any one underlying B0 decay coordinate would answer a different question."
-reject_b0s_s08637_default_chart,B0S-BR,S086.37,"S086.37 is a physical BRU parameter but production profiles it through the sigmoid mapped fitted chart. MINOS on the default fitted coordinate would give an internal chart-coordinate interval, while MINOS on a bounded physical chart changes the numerical profile formulation. This is a useful future caveated experiment, not a clean MINOS oracle."

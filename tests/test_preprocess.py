@@ -196,3 +196,23 @@ def test_ignore_minus_takes_absolute_value():
     # Flagged node X1: abs() applied; unflagged X2: sign preserved.
     assert out_meas.loc[out_meas["node"] == "X1", "value"].iloc[0] == pytest.approx(1.5)
     assert out_meas.loc[out_meas["node"] == "X2", "value"].iloc[0] == pytest.approx(-2.0)
+
+
+@pytest.mark.parametrize('reverse', [False, True])
+def test_shared_systematic_rejects_duplicate_correlation(reverse):
+    rows = [
+        {'node': 'X', 'reference_id': reference, 'occurrence': occurrence,
+         'measurement': '1.0 +- 0.1 +- 0.2', 'text': 'MeV',
+         'systematic_error_clump': 'shared'}
+        for reference, occurrence in [(11, 1), (22, 2)]
+    ]
+    fit, relations, measurements, _, seeds, tree = _minimal_inputs(rows)
+    first, second = (rows[::-1] if reverse else rows)
+    correlations = pd.DataFrame([{
+        'node_one': first['node'], 'reference_id_one': first['reference_id'],
+        'occurrence_one': first['occurrence'], 'node_two': second['node'],
+        'reference_id_two': second['reference_id'], 'occurrence_two': second['occurrence'],
+        'correlation': .5,
+    }])
+    with pytest.raises(ValueError, match='already exists in the correlation table'):
+        pp.preprocess(fit, relations, measurements, correlations, seeds, tree, 'MASS', 'MASS')

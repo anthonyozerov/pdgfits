@@ -1,16 +1,18 @@
+"""Parse PDG measurement strings, adjustment records and parameter names."""
+
 import re
 import numpy as np
 import pandas as pd
 
 
-# Parser for measurement strings as written in the internal PDG database.
-# Written by AI and probably fragile.
-# Doesn't handle some branching ratios and special cases which I don't understand.
 def parse_measurement(s):
+    """Return the value, upper/lower errors and last paired error component.
+
+    Combine quoted error components in quadrature and apply any trailing
+    exponent. An optional annotation beginning with @ is not part of the value.
+    """
     if "@" in s:
-        # print(s)
         s = s.split('@')[0]
-        # return (np.nan, np.nan, np.nan)
     s = s.strip()
 
     # get the trailing exponent, and the corresponding multiplicative
@@ -23,8 +25,6 @@ def parse_measurement(s):
     # strip opening and closing parentheses
     s = s.strip('()')
 
-    # tokenise the string
- 
     # Each error token is preceded by one or two sign characters, possibly with a space between the sign(s) and number.
     # Regex for one token: (sign-chars)[optional space](unsigned number)
     #   sign-chars: one of  +  |  -  |  +-  |  -+
@@ -60,7 +60,6 @@ def parse_measurement(s):
     # return all values scaled by the magnitude
     return (value * scale, quad(pos_errors) * scale, quad(neg_errors) * scale, last_err)
 
-# function to format a measurement into a string
 def measurement_string(meas, error_p, error_n):
     return f'{meas}+{error_p}-{error_n}'
 
@@ -111,19 +110,17 @@ def get_adjust_data(adjustments):
     else:
         return None
 
-# function to get the scale for a measurement
-# TODO: DOES THIS HANDLE ALL CASES???
 def get_scale(text):
-    scale = 1
+    """Convert explicit keV/eV inputs to MeV; leave other unit conventions alone."""
     if text == 'keV':
-        scale *= 1e-3
-    elif text == 'eV':
-        scale *= 1e-6
-    return scale
+        return 1e-3
+    if text == 'eV':
+        return 1e-6
+    return 1
 
-# function to make a key for a parameter
+
 def parameter_key(par_code, parameter):
+    """Use the dotted PDG code when the parameter belongs to a coded group."""
     if pd.isna(par_code):
         return parameter
-    else:
-        return par_code+'.'+parameter
+    return par_code + '.' + parameter

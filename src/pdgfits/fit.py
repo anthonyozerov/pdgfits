@@ -1,3 +1,5 @@
+"""Prepare and minimize a joint fit in physical or unconstrained coordinates."""
+
 import numpy as np
 import jax
 from jax import numpy as jnp
@@ -175,28 +177,6 @@ def _run_constrained_scipy(scipy_obj, scipy_value, scipy_hessp, x0, bounds, cons
     return best
 
 
-def _run_minuit_candidate(chi2_val, chi2_grad, x0, constrained, decay_param_idxs, fixed_idx):
-    m = Minuit(chi2_val, x0, grad=chi2_grad)
-    m.errordef = 1
-    m.strategy = 0
-
-    if constrained and decay_param_idxs is not None:
-        for i in decay_param_idxs:
-            m.limits[int(i)] = (0, 1)
-
-    for _ in range(3):
-        m.migrad()
-        m.simplex()
-    m.migrad()
-    m.hesse()
-
-    if fixed_idx is not None:
-        m.fixed[fixed_idx] = True
-        m.hesse()
-
-    return m
-
-
 def run_fit(label, verbose=True, optimizer='minuit', fit_space='unconstrained'):
     """
     Run a single fit by label.
@@ -258,8 +238,7 @@ def run_fit(label, verbose=True, optimizer='minuit', fit_space='unconstrained'):
 
     corr_mat = get_corr_mat(meas_df, corr_df)
     if verbose and not jnp.all(jnp.linalg.eigvals(corr_mat) >= 0):
-        print('!!!correlation matrix is not PSD!!!')
-        print('!!!this is probably bad!!!')
+        warnings.warn('Measurement correlation matrix is not positive semidefinite.')
     corr_mat_inv = jnp.linalg.pinv(corr_mat)
 
     is_bru = algorithm == 'BRU' or (algorithm in ['BR', 'BR (NO MATRIX)', 'BR PRINT'] and len(particles) > 1)
@@ -291,19 +270,9 @@ def run_fit(label, verbose=True, optimizer='minuit', fit_space='unconstrained'):
     )
 
     if decay_param_idxs is not None:
-        # Decay (branching-fraction) seeds must be in proportion units in (0,1),
-        # but the DB stores some in percent. A proportion is never > 1, so a seed
-        # exceeding 1 flags a non-proportion (almost always percent) entry. The
-        # fix differs by fit type, mirroring the PDG FORTRAN (sbrfit.f):
-        #   - is_br (single-particle, sum-to-1 / softmax): always renormalize by
-        #     the sum (PDG's SUM_TO_1 branch, sbrfit.f:697-716). This enforces the
-        #     sum-to-1 starting point and absorbs percent entries as a side effect.
-        #   - is_bru (multi-particle BR / BRU, sigmoid): branching fractions are
-        #     NOT constrained to sum to 1 (some decays aren't fit parameters), so
-        #     dividing by the sum would distort them. Instead convert percent ->
-        #     proportion by dividing any group with a >1 seed by 100. (PDG tolerates
-        #     raw percent seeds because its Gauss-Newton fit is robust to the start
-        #     point; our sigmoid reparametrization requires inputs in (0,1).)
+        # BR fractions sum to one; normalize their seeds as in sbrfit.f.
+        # BRU fractions need not sum to one. Convert percent seeds instead,
+        # then stay inside the open interval required by the parameter map.
         for particle in particles:
             bool_select = np.array([p.startswith(particle + '.') for p in parameters])
             if not bool_select.any():
@@ -345,10 +314,6 @@ def run_fit(label, verbose=True, optimizer='minuit', fit_space='unconstrained'):
         y, mu_adjust, error_n, error_p, corr_mat_inv, fitted_params_to_params,
     )
 
-    chi2_val_and_grad = jax.jit(jax.value_and_grad(chi2))
-    chi2_hessp = jax.jit(lambda x, p: jax.jvp(jax.grad(chi2), (x,), (p,))[1])
-    chi2_hessian = jax.hessian(chi2)
-
     fitted_param_init = params_to_fitted_params(param_init)
 
     assert not jnp.any(jnp.isnan(fitted_param_init) | jnp.isinf(fitted_param_init))
@@ -361,6 +326,9 @@ def run_fit(label, verbose=True, optimizer='minuit', fit_space='unconstrained'):
     hesse_accurate = None
 
     if optimizer == 'scipy':
+        chi2_val_and_grad = jax.jit(jax.value_and_grad(chi2))
+        chi2_hessp = jax.jit(lambda x, p: jax.jvp(jax.grad(chi2), (x,), (p,))[1])
+
         def scipy_obj(x):
             val, grad = chi2_val_and_grad(jnp.array(x, dtype=jnp.float64))
             return float(val), np.array(grad, dtype=np.float64)
@@ -380,27 +348,23 @@ def run_fit(label, verbose=True, optimizer='minuit', fit_space='unconstrained'):
                 raise FloatingPointError('non-finite Hessian-vector product')
             return hvp
 
-        scipy_method = 'trust-ncg'
         scipy_bounds = None
         scipy_constraints = []
 
         if constrained and decay_param_idxs is not None:
-            scipy_method = 'SLSQP'
             n = len(fitted_param_init)
             lb = np.full(n, -np.inf)
             ub = np.full(n, np.inf)
-            for i in decay_param_idxs:
-                lb[i] = 0.0
-                ub[i] = 1.0
+            lb[decay_param_idxs] = 0.0
+            ub[decay_param_idxs] = 1.0
             scipy_bounds = Bounds(lb, ub)
             if is_br:
                 A = np.zeros((1, n))
-                for i in decay_param_idxs:
-                    A[0, int(i)] = 1.0
+                A[0, decay_param_idxs] = 1.0
                 scipy_constraints.append(LinearConstraint(A, 1.0, 1.0))
 
         x0 = np.array(fitted_param_init, dtype=np.float64)
-        if scipy_method == 'trust-ncg':
+        if scipy_bounds is None:
             result = _run_unconstrained_scipy(scipy_obj, scipy_value, scipy_hessp, x0)
         else:
             result = _run_constrained_scipy(
@@ -416,12 +380,24 @@ def run_fit(label, verbose=True, optimizer='minuit', fit_space='unconstrained'):
         chi2_min = float(result.fun)
         fitted_values = jnp.array(result.x, dtype=jnp.float64)
         param_values = fitted_params_to_params(fitted_values)
-        hess = chi2_hessian(fitted_values)
+        hess = jax.hessian(chi2)(fitted_values)
         covariance = 2 * jnp.linalg.pinv(hess)
     else:
-        m = _run_minuit_candidate(
-            chi2_val, chi2_grad, fitted_param_init, constrained, decay_param_idxs, fixed_idx
-        )
+        m = Minuit(chi2_val, fitted_param_init, grad=chi2_grad)
+        m.errordef = 1
+        m.strategy = 0
+        if constrained and decay_param_idxs is not None:
+            for index in decay_param_idxs:
+                m.limits[int(index)] = (0, 1)
+        # Preserve the validated escape/recovery sequence before estimating curvature.
+        for _ in range(3):
+            m.migrad()
+            m.simplex()
+        m.migrad()
+        m.hesse()
+        if fixed_idx is not None:
+            m.fixed[fixed_idx] = True
+            m.hesse()
 
         chi2_min = float(m.fval)
         fitted_values = jnp.array(m.values, dtype=jnp.float64)

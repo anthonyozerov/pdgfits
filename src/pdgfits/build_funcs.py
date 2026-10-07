@@ -1,3 +1,5 @@
+"""Compile PDG relationships and measurement corrections into JAX functions."""
+
 import numpy as np
 import pandas as pd
 import jax.numpy as jnp
@@ -14,83 +16,88 @@ def get_parameter_funcs(parameters):
 
 
 def get_meas_funcs(node_func_dict, parameter_func_dict, meas_df):
-    # list of functions which map parameters to the value of each measurement's measurand
-    # these come either from node_funcs or parameter_funcs
-    meas_funcs = []
-    for meas_node in list(meas_df['node']):
-        if meas_node in node_func_dict:
-            meas_funcs.append(node_func_dict[meas_node])
-        elif meas_node in parameter_func_dict:
-            meas_funcs.append(parameter_func_dict[meas_node])
-        else:
-            raise ValueError(f"Node {meas_node} not found in node_func_dict or parameter_func_dict")
-    return meas_funcs
+    """Select a prediction for each measurement, giving relationships priority."""
+    functions = {**parameter_func_dict, **node_func_dict}
+    missing = set(meas_df['node']) - functions.keys()
+    if missing:
+        raise ValueError(f'Measurement nodes have no prediction: {sorted(missing)}')
+    return [functions[node] for node in meas_df['node']]
 
-# make a function which will be added to the measurement vector to account for dep_meas measurements
+
 def get_translate_dep(dep_meas_data, parameters, nodes, parameter_funcs, node_funcs):
-    n_meas = len(dep_meas_data)
-    if all(d is None for d in dep_meas_data):
-        return lambda params: jnp.zeros(n_meas, dtype=jnp.float64)
-    functions = []
+    """Compile additive corrections sum(a_j * (parameter_j - reference_j))."""
+    if all(data is None for data in dep_meas_data):
+        return lambda params: jnp.zeros(len(dep_meas_data), dtype=jnp.float64)
+
+    # Corrections name physical parameters first, then derived relationships.
+    functions = {**dict(zip(nodes, node_funcs)), **dict(zip(parameters, parameter_funcs))}
+    terms = []
     for data in dep_meas_data:
-        if data is not None:
-            dep_nodes = data[0]
-            for i in range(len(dep_nodes)):
-                if dep_nodes[i] not in parameters+nodes:
-                    dep_nodes[i] = f'nuisance_{dep_nodes[i]}'
-            assert all(node in parameters+nodes for node in dep_nodes)
-            constant = -np.sum(np.array(data[1])*np.array(data[2]))
-            coefficients = np.array(data[1], dtype=np.float64)
-            dep_node_funcs = [(parameter_funcs+node_funcs)[list(parameters+nodes).index(node)] for node in dep_nodes]
-            functions.append(
-                lambda params, coefficients=coefficients, dep_node_funcs=dep_node_funcs, constant=constant:
-                    jnp.sum(coefficients * jnp.stack([dep_node_func(params) for dep_node_func in dep_node_funcs])) + constant
-            )
-        else:
-            functions.append(lambda params: 0)
-    # this function just stacks all the functions into one vector-valued function
+        if data is None:
+            terms.append(None)
+            continue
+        names, coefficients, references = data
+        getters = [functions[name if name in functions else f'nuisance_{name}'] for name in names]
+        coefficients = np.asarray(coefficients, dtype=np.float64)
+        constant = -np.sum(coefficients * np.asarray(references))
+        terms.append((getters, coefficients, constant))
+
     def translate_dep(params):
-        return jnp.stack([func(params) for func in functions])
+        values = []
+        for term in terms:
+            if term is None:
+                values.append(0)
+            else:
+                getters, coefficients, constant = term
+                predictions = jnp.stack([function(params) for function in getters])
+                values.append(jnp.sum(coefficients * predictions) + constant)
+        return jnp.stack(values)
+
     return translate_dep
 
-# make a function which will be multiplied with the measurement vector to account for br_adjust measurements
-def get_adjust(adjust_data, parameters, nodes, parameter_funcs, node_funcs):
-    n_meas = len(adjust_data)
-    if all(d is None for d in adjust_data):
-        return lambda params: jnp.ones(n_meas, dtype=jnp.float64)
-    functions = []
-    for data in adjust_data:
-        if data is None:
-            functions.append(lambda params: 1)
-        else:
-            rels = data[1]
-            dep_nodes = data[0]
 
-            node_functions = []
-            for i in range(len(dep_nodes)):
-                rel = rels[i]
-                dep_node = dep_nodes[i]
-                if dep_node not in parameters+nodes:
-                    dep_node = f'nuisance_{dep_node}'
-                # print(dep_node)
-                if rel == '/':
-                    node_functions.append(lambda params, dep_node_func=(parameter_funcs+node_funcs)[list(parameters+nodes).index(dep_node)]: dep_node_func(params))
-                elif rel == '*':
-                    node_functions.append(lambda params, dep_node_func=(parameter_funcs+node_funcs)[list(parameters+nodes).index(dep_node)]: 1/dep_node_func(params))
-                else:
-                    raise ValueError(f"Unknown relationship: {rel}")
-            functions.append(lambda params, node_functions=node_functions: jnp.prod(jnp.stack([func(params) for func in node_functions])))
-    # this function just stacks all the functions into one vector-valued function
+def get_adjust(adjust_data, parameters, nodes, parameter_funcs, node_funcs):
+    """Compile multiplicative corrections in the measurement convention.
+
+    A stored division multiplies the measured value by its auxiliary input;
+    a stored multiplication divides it. Prediction construction reverses this
+    convention in get_mu_adjust.
+    """
+    if all(data is None for data in adjust_data):
+        return lambda params: jnp.ones(len(adjust_data), dtype=jnp.float64)
+
+    functions = {**dict(zip(nodes, node_funcs)), **dict(zip(parameters, parameter_funcs))}
+    terms = []
+    for data in adjust_data:
+        factors = []
+        if data is not None:
+            names, operators = data
+            for name, operator in zip(names, operators):
+                if operator not in ('/', '*'):
+                    raise ValueError(f'Unknown relationship: {operator}')
+                function = functions[name if name in functions else f'nuisance_{name}']
+                factors.append((function, operator))
+        terms.append(factors)
+
     def adjust(params):
-        return jnp.stack([func(params) for func in functions])
+        values = []
+        for factors in terms:
+            if not factors:
+                values.append(1)
+            else:
+                values.append(jnp.prod(jnp.stack([
+                    function(params) if operator == '/' else 1/function(params)
+                    for function, operator in factors
+                ])))
+        return jnp.stack(values)
+
     return adjust
 
+
 def get_mu(meas_funcs):
-    # function mapping the parameters to an array of measurand values
-    # essentially just puts the results from all the meas_funcs into an array
-    def mu(params):
-        return jnp.stack([meas_func(params) for meas_func in meas_funcs])
-    return mu
+    """Stack scalar measurement predictions into a vector-valued prediction."""
+    return lambda params: jnp.stack([function(params) for function in meas_funcs])
+
 
 def _build_node_func(node, parameters, eq_type_map, rel_df, jit=True):
     """Build a func_factory callable for a single node (used as nonlinear fallback)."""

@@ -1,3 +1,5 @@
+"""Translate each supported PDG equation type into its mathematical function."""
+
 import jax.numpy as jnp
 import jax
 import numpy as np
@@ -12,7 +14,7 @@ def func_factory(equation_type, coefficients, coeff_params, jit=True):
     simple = not np.any(coeff_params)  # static: True when no parameter-valued coefficients
 
     if simple:
-        def t(params, i):
+        def term(params, i):
             return jnp.dot(params, coefficients[i])
     else:
         has_coeff = coeff_params > 0  # (n_terms, n_params) static boolean mask
@@ -24,7 +26,7 @@ def func_factory(equation_type, coefficients, coeff_params, jit=True):
         param_idxs = jnp.array(np.maximum(coeff_params - 1, 0))
 
         # i is always a static Python int at every call site (0, 1, 2).
-        def t(params, i):
+        def term(params, i):
             params_gathered = params[param_idxs[i]]
             return (jnp.dot(params * params_gathered, coeff_param_parts[i]) +
                     jnp.dot(params, coeff_static_parts[i]))
@@ -32,24 +34,24 @@ def func_factory(equation_type, coefficients, coeff_params, jit=True):
     maybe_jit = jax.jit if jit else (lambda f: f)
 
     @maybe_jit
-    def f(params):
+    def equation(params):
         if equation_type == '+':
-            return t(params, 0)
+            return term(params, 0)
         elif equation_type in ('G+', 'R+', 'P'):
-            return t(params, 0) * t(params, 1)
+            return term(params, 0) * term(params, 1)
         elif equation_type == 'lifetime':
-            return 1.0 / t(params, 0)
+            return 1.0 / term(params, 0)
         elif equation_type == '/':
-            return t(params, 0) / t(params, 1)
+            return term(params, 0) / term(params, 1)
         elif equation_type == 'G*':
-            return t(params, 0) * t(params, 1) * t(params, 2)
+            return term(params, 0) * term(params, 1) * term(params, 2)
         elif equation_type == 'P/':
-            return t(params, 0) * t(params, 1) / t(params, 2)
+            return term(params, 0) * term(params, 1) / term(params, 2)
         elif equation_type == 'SR':
-            return jnp.sqrt(t(params, 0) * t(params, 1))
+            return jnp.sqrt(term(params, 0) * term(params, 1))
         elif equation_type == 'SQ':
-            return jnp.sqrt(t(params, 0) * t(params, 1)) * t(params, 2)
+            return jnp.sqrt(term(params, 0) * term(params, 1)) * term(params, 2)
         else:
             raise ValueError(f"Unknown equation type: {equation_type}")
 
-    return f
+    return equation

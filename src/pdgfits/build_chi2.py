@@ -1,3 +1,10 @@
+"""Build the asymmetric correlated objective Q = r.T @ precision @ r.
+
+The product kernel shares JAX compilations across averages. The general builder
+accepts arbitrary predictions and parameter maps; both expose residuals and
+derivatives for repeated fits without rebuilding the measurement model.
+"""
+
 import numpy as np
 import jax.numpy as jnp
 import jax
@@ -73,10 +80,6 @@ def build_chi2(y, mu, error_n, error_p, corr_mat_inv, fitted_params_to_params, t
     diff_e = error_p - error_n
     prod_e2 = 2 * error_n * error_p
 
-    def get_sigma(resid):
-        error_between = (prod_e2 - resid * diff_e) / sum_e
-        return jnp.clip(error_between, error_min, error_max)
-
     maybe_jit = jax.jit if use_jit else (lambda f: f)
 
     @maybe_jit
@@ -84,7 +87,9 @@ def build_chi2(y, mu, error_n, error_p, corr_mat_inv, fitted_params_to_params, t
         params = fitted_params_to_params(fitted_params)
         adjustment = adjust(params)
         resid = (y_arg * adjustment + translate_dep(params)) - mu(params)
-        error = scales * get_sigma(resid / (adjustment * scales)) * adjustment
+        error_between = (prod_e2 - resid / (adjustment * scales) * diff_e) / sum_e
+        sigma = jnp.clip(error_between, error_min, error_max)
+        error = scales * sigma * adjustment
         return resid / error
 
     @maybe_jit
@@ -106,7 +111,7 @@ def build_chi2(y, mu, error_n, error_p, corr_mat_inv, fitted_params_to_params, t
     def chi2(fitted_params):
         return chi2_open(fitted_params, y)
 
-    chi2_grad_jax = (jax.jit if use_jit else (lambda f: f))(jax.grad(chi2))
+    chi2_grad_jax = maybe_jit(jax.grad(chi2))
     def chi2_grad(fitted_params):
         return np.asarray(chi2_grad_jax(fitted_params))
     def chi2_val(fitted_params):

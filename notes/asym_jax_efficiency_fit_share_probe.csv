@@ -1,3 +1,0 @@
-variant,fit_runtime_sec,asym_runtime_sec,endpoint_function_evals,max_abs_residual
-no_shared_derivatives,1.6548268939950503,8.836422407999635,45,0.003450196954705831
-shared_derivatives,1.6281999030034058,6.88086458700127,45,0.003450196954705831

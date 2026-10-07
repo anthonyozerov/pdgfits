@@ -1,3 +1,5 @@
+"""Bracket and verify asymmetric intervals using checked profile minima."""
+
 from decimal import Decimal
 from dataclasses import asdict, dataclass
 import time
@@ -123,27 +125,6 @@ class ProfileRoot:
         return diagnostics
 
 
-def _coerce_profile_problem(
-    profile_chi2,
-    *,
-    target_name="target",
-    target_value=None,
-    chi2_min=None,
-    lower_initial=None,
-    upper_initial=None,
-):
-    if hasattr(profile_chi2, "evaluate"):
-        return profile_chi2
-    return CallableProfileProblem(
-        profile_chi2=profile_chi2,
-        target_name=target_name,
-        target_value=target_value,
-        chi2_min=chi2_min,
-        lower_initial=lower_initial,
-        upper_initial=upper_initial,
-    )
-
-
 def find_profile_root(
     profile_problem,
     val=None,
@@ -157,7 +138,8 @@ def find_profile_root(
 ):
     """Find and verify profile-likelihood endpoints for an explicit problem."""
     t_root_start = time.perf_counter()
-    problem = _coerce_profile_problem(profile_problem)
+    problem = (profile_problem if hasattr(profile_problem, 'evaluate')
+               else CallableProfileProblem(profile_problem))
     if val is None:
         val = getattr(problem, "target_value", None)
     if chi2_min is None:
@@ -170,7 +152,7 @@ def find_profile_root(
         raise TypeError("find_profile_root requires val, chi2_min, lb, and ub, either as arguments or problem attributes")
 
     target = float(chi2_min) + 1.0
-    val = float(val); lb = float(lb); ub = float(ub)
+    val, lb, ub = float(val), float(lb), float(ub)
     if not np.isfinite([target, val, lb, ub, residual_tol]).all() or residual_tol <= 0:
         raise ValueError("Profile search inputs must be finite and residual_tol positive")
     if not lb < val < ub:
@@ -209,10 +191,6 @@ def find_profile_root(
         boundary = limits[1] if upper else limits[0]
         moving = min(moving, boundary) if upper else max(moving, boundary)
 
-        def boundary_endpoint(point):
-            return ProfileEndpoint(side, boundary, abs(boundary-val), point.chi2,
-                                   point.chi2-target, point, side_counts[side].copy(), True)
-
         def bracket_eval(inner, outer):
             """Evaluate an outward bracket point, contracting if it is unreachable.
 
@@ -248,7 +226,10 @@ def find_profile_root(
         moving, moving_point = bracket_eval(fixed, moving)
         while moving_point.chi2 < target and n_expand < max_iter:
             if moving == boundary:
-                return boundary_endpoint(moving_point)
+                return ProfileEndpoint(
+                    side, boundary, abs(boundary-val), moving_point.chi2,
+                    moving_point.chi2-target, moving_point, side_counts[side].copy(), True,
+                )
             n_expand += 1
             inner = moving
             moving = val + 2.0 * (moving - val)
@@ -285,25 +266,16 @@ def find_profile_root(
                 else: lo2, qlo = mid, mid_point.chi2
             if abs(mid_point.chi2 - target) <= residual_tol:
                 break
-        endpoint = mid
-        # The endpoint is exactly the final bisection point, so this is the
-        # profile value that verifies profile_chi2(endpoint) = chi2_min + 1.
-        endpoint_point = mid_point
-        endpoint_chi2 = endpoint_point.chi2
-        resid = endpoint_chi2 - target
-        if abs(resid) > residual_tol:
+        # Reuse the evaluated endpoint; never accept a root on position alone.
+        residual = mid_point.chi2 - target
+        if abs(residual) > residual_tol:
             raise RuntimeError(
-                f"Profile endpoint verification failed: endpoint={endpoint}, chi2={endpoint_chi2}, "
-                f"target={target}, residual={resid}"
+                f"Profile endpoint verification failed: endpoint={mid}, chi2={mid_point.chi2}, "
+                f"target={target}, residual={residual}"
             )
-        error = (endpoint - val) if upper else (val - endpoint)
         return ProfileEndpoint(
-            side=side,
-            endpoint=endpoint,
-            error=error,
-            chi2=endpoint_chi2,
-            residual=resid,
-            point=endpoint_point,
+            side=side, endpoint=mid, error=(mid-val) if upper else (val-mid),
+            chi2=mid_point.chi2, residual=residual, point=mid_point,
             counts=side_counts[side].copy(),
         )
 
@@ -346,6 +318,7 @@ def binary_search_error(
 
 
 binary_search_error.last_diagnostics = None
+binary_search_error.last_root = None
 
 
 def _cached_value_and_grad(function):
@@ -358,7 +331,6 @@ def _cached_value_and_grad(function):
             last_x = np.array(x, copy=True)
         return last_result
     return evaluate
-binary_search_error.last_root = None
 
 
 def _physical_profile_chart(fit):
@@ -418,11 +390,11 @@ def _physical_profile_chart(fit):
 
 
 def calc_asym_errors(fit, targets=None):
-    nodes = fit['nodes']; parameters = fit['parameters']
-    node_funcs = fit['node_funcs']; parameter_funcs = fit['parameter_funcs']
+    nodes, parameters = fit['nodes'], fit['parameters']
+    node_funcs, parameter_funcs = fit['node_funcs'], fit['parameter_funcs']
     fitted_params_to_params = fit['fitted_params_to_params']
-    fitted_values = fit['fitted_values']; param_values = fit['param_values']
-    chi2 = fit['chi2']; chi2_min = fit['chi2_min']; covariance = fit['covariance']
+    fitted_values, param_values = fit['fitted_values'], fit['param_values']
+    chi2, chi2_min, covariance = fit['chi2'], fit['chi2_min'], fit['covariance']
     chart = _physical_profile_chart(fit) if 'mu_adjust' in fit and covariance is not None else None
     linear_constraint, limits = None, {}
     if chart is not None:

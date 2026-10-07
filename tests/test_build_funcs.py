@@ -1,4 +1,5 @@
 import contextlib
+import copy
 import io
 
 import jax
@@ -11,7 +12,7 @@ import pytest
 from pdgfits.build_funcs import (
     get_node_funcs, get_parameter_funcs, get_meas_funcs, get_mu,
     get_mu_vectorized,
-    get_translate_dep, get_adjust,
+    get_translate_dep, get_adjust, get_mu_adjust,
 )
 
 
@@ -156,6 +157,29 @@ def test_adjust_all_none():
     out = result_fn(params)
     assert jnp.allclose(out, jnp.ones(3, dtype=jnp.float64))
     assert out.shape == (3,)
+
+
+def test_combined_measurement_corrections_and_derivatives():
+    # X names both a physical parameter and a relationship 2*X. Offsets use
+    # the physical parameter; the measured prediction uses the relationship.
+    parameters = ['X', 'nuisance_A', 'nuisance_B']
+    parameter_funcs = get_parameter_funcs(parameters)
+    node_funcs = [lambda p: 2*p[0]]
+    offsets = [(['X', 'A'], [0.5, 3.0], [8.0, 1.0]), None, None]
+    adjustments = [(['A', 'B'], ['/', '*']), None, None]
+    original = copy.deepcopy((offsets, adjustments))
+    translate = get_translate_dep(offsets, parameters, ['X'], parameter_funcs, node_funcs)
+    adjust = get_adjust(adjustments, parameters, ['X'], parameter_funcs, node_funcs)
+    predictions = get_mu_adjust(lambda p: jnp.array([2*p[0], p[1], p[2]]), adjust, translate)
+
+    values = jnp.array([10., 2., 4.])
+    np.testing.assert_allclose(translate(values), [4., 0., 0.])
+    np.testing.assert_allclose(adjust(values), [.5, 1., 1.])
+    # Corrected prediction: (2*X - .5*(X-8) - 3*(A-1)) * B/A.
+    np.testing.assert_allclose(jax.jit(predictions)(values), [32., 2., 4.])
+    np.testing.assert_allclose(jax.jacfwd(predictions)(values),
+                               [[3., -22., 8.], [0., 1., 0.], [0., 0., 1.]])
+    assert (offsets, adjustments) == original
 
 
 @pytest.mark.db

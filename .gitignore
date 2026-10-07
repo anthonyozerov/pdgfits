@@ -220,3 +220,7 @@ SCIENTIFIC_CONTEXT.md
 pdgfits-remote/
 notes/logs/
 .local/
+
+# Local documentation and research notes
+/README.md
+/notes/
