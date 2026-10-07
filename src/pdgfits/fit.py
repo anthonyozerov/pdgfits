@@ -236,7 +236,7 @@ def run_fit(label, verbose=True, optimizer='minuit', fit_space='unconstrained'):
     error_n = jnp.array(meas_df['error_n'], dtype=jnp.float64)
     error_p = jnp.array(meas_df['error_p'], dtype=jnp.float64)
 
-    corr_mat = get_corr_mat(meas_df, corr_df)
+    corr_mat, blocks = get_corr_mat(meas_df, corr_df, return_blocks=True)
     if verbose and not jnp.all(jnp.linalg.eigvals(corr_mat) >= 0):
         warnings.warn('Measurement correlation matrix is not positive semidefinite.')
     corr_mat_inv = jnp.linalg.pinv(corr_mat)
@@ -431,6 +431,7 @@ def run_fit(label, verbose=True, optimizer='minuit', fit_space='unconstrained'):
         'mu': mu,
         'mu_adjust': mu_adjust,
         'corr_mat': corr_mat,
+        'correlation_blocks': blocks,
         'meas_df': meas_df,
         'rel_df': rel_df,
         'fit_df': fit_df,

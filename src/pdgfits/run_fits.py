@@ -22,7 +22,9 @@ def main():
     parser.add_argument('--meas_sensitivity', action='store_true', default=False)
     parser.add_argument('--optimizer', type=str, default='minuit', choices=['minuit', 'scipy'])
     parser.add_argument('--fit_space', type=str, default='unconstrained', choices=['unconstrained', 'constrained'])
-    parser.add_argument('--node-scales', action='store_true', help='Calculate separate node scales once from local fit geometry')
+    parser.add_argument('--node-scales', action='store_true', help='Calculate node/block scales once from local fit geometry')
+    parser.add_argument('--group-correlated', action=argparse.BooleanOptionalAction, default=True,
+                        help='Give each declared correlation block its own scale (default)')
     args = parser.parse_args()
 
     fits_df = all_fits()
@@ -58,9 +60,8 @@ def main():
 
         if args.node_scales:
             from pdgfits.node_scales import fit_node_scales
-            fit = fit_node_scales(fit, verbose=True)
+            fit = fit_node_scales(fit, group_correlated=args.group_correlated, verbose=True)
             scaling = fit['node_scaling']
-            print('Conditional node scales:', dict(zip(scaling['nodes'], scaling['scales'])))
             print('Local residual degrees of freedom:', scaling['residual_df'])
 
         print(f'chi2 obtained: {Decimal(fit["chi2_min"]):.2E}')

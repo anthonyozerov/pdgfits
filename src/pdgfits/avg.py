@@ -11,7 +11,7 @@ from iminuit import Minuit
 
 from pdgfits.preprocess import preprocess
 from pdgfits.build_funcs import get_mu_vectorized, get_translate_dep, get_adjust, get_node_funcs, get_parameter_funcs, get_mu_adjust
-from pdgfits.corr_mat import get_corr_mat
+from pdgfits.corr_mat import get_corr_mat, correlation_blocks
 from pdgfits.build_chi2 import build_chi2, build_product_chi2
 from pdgfits.asym_errors import build_coordinate_profile_chi2, find_profile_root
 from pdgfits.scalar_average import scalar_average
@@ -76,10 +76,11 @@ def run_avg(node, meas_df_node, corr_df_node, skip_avg=False, contours=False, co
     error_n = jnp.array(meas_df['error_n'], dtype=jnp.float64)
     error_p = jnp.array(meas_df['error_p'], dtype=jnp.float64)
 
-    corr_mat = get_corr_mat(meas_df, corr_df)
+    corr_mat, blocks = get_corr_mat(meas_df, corr_df, return_blocks=True)
     if corr_floor > 0.0:
         off_diag = 1.0 - jnp.eye(corr_mat.shape[0])
         corr_mat = jnp.maximum(corr_mat, corr_floor * off_diag)
+        blocks = correlation_blocks(np.asarray(corr_mat))
     corr_mat_inv = jnp.asarray(np.linalg.pinv(np.asarray(corr_mat)))
 
     if all(d is None for d in dep_meas_data):
@@ -109,7 +110,7 @@ def run_avg(node, meas_df_node, corr_df_node, skip_avg=False, contours=False, co
     else:
         prepared = {'fitted_values': param_init, 'covariance': None,
                     'chi2_open': chi2_open, 'meas_df': meas_df,
-                    'corr_mat': corr_mat,
+                    'corr_mat': corr_mat, 'correlation_blocks': blocks,
                     'mu_adjust': mu_adjust, 'fitted_params_to_params': lambda p: p}
         optimized = prepare_refit(prepared)(full_output=False)
         param_values = np.asarray(optimized['fitted_values'])
@@ -187,6 +188,7 @@ def run_avg(node, meas_df_node, corr_df_node, skip_avg=False, contours=False, co
         'mu': mu,
         'mu_adjust': mu_adjust,
         'corr_mat': corr_mat,
+        'correlation_blocks': blocks,
         'meas_df': meas_df,
         'rel_df': rel_df,
         'fit_df': fit_df,

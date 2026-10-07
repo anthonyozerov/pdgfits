@@ -10,24 +10,30 @@ import jax.numpy as jnp
 import numpy as np
 from scipy.linalg import null_space
 
-from pdgfits.pdg_scaling import _correlated_blocks
+from pdgfits.corr_mat import correlation_blocks
 from pdgfits.refit import physical_refit_model, prepare_refit
 
 
-def node_scale_geometry(residual, jacobian, correlation, nodes):
-    """Compare each node's marginal quadratic residual with its local expectation.
+def node_scale_geometry(residual, jacobian, correlation, nodes, *,
+                        group_correlated=True, correlated_blocks=None):
+    """Compare each scale group's quadratic residual with its local expectation.
 
-    Inputs are normalized measurement residuals z, their parameter Jacobian A,
-    and the supplied correlation R. In the local Gaussian model the residual
-    covariance is L (I - U U.T) L.T, where L L.T = R and U spans L^+ A.
-    For group g use Q_g = z_g.T R_gg^+ z_g and E_g = tr(R_gg^+ Cov(z)_gg).
-    S_g = max(1, sqrt(Q_g/E_g)); zero residual degrees of freedom are flagged.
+    Inputs are normalized residuals z, their parameter Jacobian A, and supplied
+    correlation R. The local residual covariance is L (I - U U.T) L.T, where
+    L L.T = R and U spans L^+ A. For group g calculate
+    Q_g = z_g.T R_gg^+ z_g and E_g = tr(R_gg^+ Cov(z)_gg), then
+    S_g = max(1, sqrt(Q_g/E_g)). Flag groups with no residual information.
 
-    Cross-node correlations enter the global projection. Marginal node Q's
-    need not sum to the global Q when nodes are correlated. This avoids signed
-    cross-term allocations or assigning rotated whitened coordinates to nodes.
-    Exactly dependent blocks tie their nodes to a common scale. Distinct scale
-    estimates are a single-pass diagnostic, not joint variance-component MLEs.
+    By default each declared correlation block has one scale; the remaining
+    measurements are grouped by node. Blocks can span nodes without bringing
+    in their other measurements. In the absence of explicit blocks, infer them
+    from nonzero correlations. This is the grouping of SDOFIT/SSCAFAC, using
+    Richie's proposed observed/expected formula rather than the old pull rule.
+
+    group_correlated=False restores marginal node groups, tying nodes only for
+    exactly dependent blocks. Such marginal Q's need not sum to the global Q.
+    Measurement scales and group records are authoritative: a node can now
+    participate in several different scale groups.
     """
     z, a, corr = map(lambda x: np.asarray(x, float), (residual, jacobian, correlation))
     nodes = np.asarray(nodes)
@@ -55,41 +61,52 @@ def node_scale_geometry(residual, jacobian, correlation, nodes):
     # A singular precision kernel only measures the supported component.
     z = basis@(basis.T@z)
     names = list(dict.fromkeys(nodes))
-    groups = [{node} for node in names]
-    for block in _correlated_blocks(corr):
-        block_eigenvalues = np.linalg.eigvalsh(corr[np.ix_(block, block)])
-        if block_eigenvalues.min() <= 1e-15*block_eigenvalues.max():
-            tied = set(nodes[block])
-            merged = set().union(*(group for group in groups if group & tied))
-            groups = [group for group in groups if not group & tied]+[merged]
-    groups.sort(key=lambda group: min(names.index(node) for node in group))
+    blocks = correlation_blocks(corr, correlated_blocks)
+    if group_correlated:
+        grouped = np.zeros(n, bool)
+        groups = [np.asarray(block, dtype=int) for block in blocks]
+        for indices in groups:
+            grouped[indices] = True
+        groups.extend(np.flatnonzero((nodes == name) & ~grouped) for name in names)
+        groups = sorted((g for g in groups if len(g)), key=lambda g: int(g[0]))
+    else:
+        # Preserve exact dependencies in the optional previous node-only rule.
+        node_groups = [{node} for node in names]
+        for block in correlation_blocks(corr):
+            eigenvalues = np.linalg.eigvalsh(corr[np.ix_(block, block)])
+            if eigenvalues.min() <= 1e-15*eigenvalues.max():
+                tied = set(nodes[block])
+                merged = set().union(*(group for group in node_groups if group & tied))
+                node_groups = [group for group in node_groups if not group & tied]+[merged]
+        node_groups.sort(key=lambda group: min(names.index(node) for node in group))
+        groups = [np.flatnonzero(np.isin(nodes, list(group))) for group in node_groups]
     rows = []
     scales = np.ones(n)
-    for group in groups:
-        indices = np.flatnonzero(np.isin(nodes, list(group)))
+    for indices in groups:
         marginal_precision = np.linalg.pinv(corr[np.ix_(indices, indices)])
         observed = float(z[indices]@marginal_precision@z[indices])
         expected = max(0., float(np.trace(marginal_precision@residual_covariance[np.ix_(indices, indices)])))
         estimable = expected > 1e-10*len(indices)
         scale = max(1., np.sqrt(observed/expected)) if estimable else 1.
         scales[indices] = scale
-        rows.append({'nodes': [name for name in names if name in group], 'indices': indices.tolist(),
+        rows.append({'nodes': list(dict.fromkeys(nodes[indices])), 'indices': indices.tolist(),
                      'observed': observed, 'expected': expected, 'scale': scale,
                      'estimable': estimable})
-    return {'nodes': names, 'scales': np.array([scales[np.flatnonzero(nodes == name)[0]] for name in names]),
+    return {'nodes': names, 'group_correlated': group_correlated,
             'measurement_scales': scales, 'groups': rows, 'mean_rank': rank,
             'measurement_rank': int(supported.sum()), 'residual_df': int(supported.sum())-rank,
             'q': float(np.sum((whitener@z)**2)), 'residual_covariance': residual_covariance}
 
 
-def fit_node_scales(fit, *, verbose=False):
-    """Calculate local node scales once, then refit the original objective.
+def fit_node_scales(fit, *, group_correlated=True, verbose=False):
+    """Calculate node/block scales once, then refit the original objective.
 
     Linearize the normalized residual map at the unscaled optimum, including
     the error-interpolation slope. At an asymmetric knot use the mean of the
     two one-sided slopes and flag it. Active bounds use the tangent space of
     the current face, which is not a boundary-mixture calibration theorem.
-    Scales multiply both quoted errors and retain correlation coefficients.
+    Correlation blocks share a scale by default; pass group_correlated=False
+    for the previous node-only groups. Scales multiply both quoted errors and retain correlation coefficients.
     No automatic precision exclusion is applied. Returned intervals condition
     on these scale estimates; their frequentist coverage is not established.
     """
@@ -114,10 +131,13 @@ def fit_node_scales(fit, *, verbose=False):
         active = np.flatnonzero((at-constraint.lb < 1e-7) | (constraint.ub-at < 1e-7))
         if len(active):
             jacobian = jacobian@null_space(constraint.A[active])
-    geometry = node_scale_geometry(raw/sigma, jacobian, original['corr_mat'], original['meas_df']['node'])
+    geometry = node_scale_geometry(
+        raw/sigma, jacobian, original['corr_mat'], original['meas_df']['node'],
+        group_correlated=group_correlated, correlated_blocks=original.get('correlation_blocks'),
+    )
     if abs(geometry['q']-original['chi2_min']) > 1e-7*max(1., abs(original['chi2_min'])):
         raise ValueError('Local residual geometry does not reproduce the fitted objective')
-    scales = geometry.pop('measurement_scales')
+    scales = geometry['measurement_scales']
     geometry.pop('residual_covariance')
     result = refit(scales=scales, start=original['x'])
     result['node_scaling'] = {**geometry, 'method': 'local geometry, one pass',
@@ -126,6 +146,6 @@ def fit_node_scales(fit, *, verbose=False):
                               'original_chi2': original['chi2_min'], 'original_values': original['param_values']}
     if verbose:
         for group in geometry['groups']:
-            print(f"{', '.join(group['nodes'])}: Q={group['observed']:.6g}, "
+            print(f"{', '.join(group['nodes'])}, rows {group['indices']}: Q={group['observed']:.6g}, "
                   f"local expectation={group['expected']:.6g}, S={group['scale']:.6g}")
     return result

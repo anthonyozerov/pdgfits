@@ -62,6 +62,7 @@ def main():
     parser.add_argument('--timeout', type=int, default=300)
     parser.add_argument('--keep-cache', action='store_true', help='Match a production batch without clearing compiled kernels')
     parser.add_argument('--no-target-retry', action='store_true', help='Do not retry targets individually after a failed group')
+    parser.add_argument('--group-correlated', action=argparse.BooleanOptionalAction, default=True)
     args = parser.parse_args()
     if os.environ.get('PDGFITS_DATA_BACKEND') != 'snapshot':
         raise RuntimeError('Select the snapshot backend explicitly')
@@ -130,7 +131,7 @@ def main():
                 if args.kind == 'node-scales':
                     from pdgfits.node_scales import fit_node_scales
                     def scale():
-                        result = fit_node_scales(fit, verbose=True)
+                        result = fit_node_scales(fit, group_correlated=args.group_correlated, verbose=True)
                         row = {'scaling': result['node_scaling'], 'values': result['param_values'],
                                 'chi2': result['chi2_min'], 'fit_valid': result['fit_valid'],
                                 'parameters': result['parameters'], 'covariance': result['covariance'],

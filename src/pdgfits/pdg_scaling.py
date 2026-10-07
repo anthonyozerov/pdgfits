@@ -9,6 +9,8 @@ asymmetric-error propagation step.
 
 import numpy as np
 
+from pdgfits.corr_mat import correlation_blocks
+
 
 def pdg_average(values, error_n, error_p=None, exclude_weak=True):
     y, en = np.asarray(values, float), np.asarray(error_n, float)
@@ -54,22 +56,6 @@ def _gls(y, x, v):
     return parameters, covariance, y-x@parameters, x@covariance@x.T
 
 
-def _correlated_blocks(v):
-    remaining, blocks = set(range(len(v))), []
-    while remaining:
-        component, pending = [], [min(remaining)]
-        while pending:
-            i = pending.pop()
-            if i not in remaining:
-                continue
-            remaining.remove(i)
-            component.append(i)
-            pending.extend(j for j in remaining if v[i, j] != 0)
-        if len(component) > 1:
-            blocks.append(sorted(component))
-    return blocks
-
-
 def pdg_linear_fit(values, design, covariance, nodes, exclude_weak=True, correlated_blocks=None):
     """PDG separate pull scales, with the original central value retained.
 
@@ -92,17 +78,10 @@ def pdg_linear_fit(values, design, covariance, nodes, exclude_weak=True, correla
     if not all(np.isfinite(a).all() for a in (y, x, v)) or not np.allclose(v, v.T, rtol=1e-12, atol=0):
         raise ValueError('Inputs must be finite and covariance symmetric')
     original, original_covariance, _, fitted_covariance = _gls(y, x, v)
-    blocks = _correlated_blocks(v) if correlated_blocks is None else correlated_blocks
+    blocks = correlation_blocks(v, correlated_blocks)
     block_ids = np.full(len(y), -1, int)
     for b, indices in enumerate(blocks):
-        if any(i < 0 or i >= len(y) for i in indices):
-            raise ValueError('Correlation block index outside measurement range')
-        if len(indices) < 2 or len(set(indices)) != len(indices) or np.any(block_ids[indices] >= 0):
-            raise ValueError('Correlation blocks must be disjoint sets of at least two inputs')
         block_ids[indices] = b
-    rows, columns = np.nonzero(v - np.diag(np.diag(v)))
-    if np.any((block_ids[rows] < 0) | (block_ids[rows] != block_ids[columns])):
-        raise ValueError('Every nonzero correlation must belong to one explicit block')
     keep = np.ones(len(y), bool)
     if exclude_weak:
         for node in dict.fromkeys(nodes):
@@ -198,7 +177,7 @@ def pdg_fit_scales(fit, exclude_weak=True):
     data = fit['meas_df']
     nodes = data['node'].to_numpy()
     correlation = np.asarray(fit['corr_mat'])
-    blocks = _correlated_blocks(correlation)
+    blocks = correlation_blocks(correlation, fit.get('correlation_blocks'))
     block_ids = np.full(len(data), -1, int)
     for i, block in enumerate(blocks):
         block_ids[block] = i
@@ -223,6 +202,11 @@ def pdg_fit_scales(fit, exclude_weak=True):
             lower, upper, np.linalg.pinv(corr), current['fitted_params_to_params'])
         answer.update(meas_df=measurements, mu_adjust=prediction, corr_mat=corr,
                       chi2=q, chi2_grad=gradient, chi2_open=opened)
+        if 'correlation_blocks' in current:
+            positions = {old: new for new, old in enumerate(indices)}
+            blocks = [[positions[i] for i in block if i in positions]
+                      for block in current['correlation_blocks']]
+            answer['correlation_blocks'] = [block for block in blocks if len(block) > 1]
         answer.pop('input_scales', None)
         return prepare_refit(answer)()
 

@@ -42,7 +42,8 @@ def test_measurement_sensitivity_holds_node_scales_fixed():
 
 @pytest.mark.parametrize('exclude', [False, True])
 @pytest.mark.parametrize('rho', [0., .4])
-def test_general_pdg_scale_pass_agrees_with_linear_reference(exclude, rho):
+@pytest.mark.parametrize('declared', [False, True])
+def test_general_pdg_scale_pass_agrees_with_linear_reference(exclude, rho, declared):
     design = np.repeat([[1., 0.], [0., 1.], [1., 1.]], 3, axis=0)
     sigma = np.tile([1., 1., 10.], 3)
     nodes = np.repeat(['a', 'b', 'a+b'], 3)
@@ -50,11 +51,18 @@ def test_general_pdg_scale_pass_agrees_with_linear_reference(exclude, rho):
     correlation[0, 3] = correlation[3, 0] = rho
     y = np.array([-1., 1., 10., -2., 1., 3., 4., 8., 22.])
     fit = model_fit(y, sigma, sigma, correlation, lambda p: jnp.asarray(design)@p, [0., 0.], nodes)
-    old = pdg_linear_fit(y, design, correlation*np.outer(sigma, sigma), nodes, exclude_weak=exclude)
+    blocks = [[0, 3]] if declared else None
+    if declared:
+        fit['correlation_blocks'] = blocks
+    old = pdg_linear_fit(y, design, correlation*np.outer(sigma, sigma), nodes,
+                         exclude_weak=exclude, correlated_blocks=blocks)
     new = pdg_fit_scales(fit, exclude_weak=exclude)
     np.testing.assert_array_equal(new['retained'], old['retained'])
     np.testing.assert_allclose(new['refitted_fit']['param_values'], old['refitted_parameters'], atol=1e-7)
     np.testing.assert_allclose(new['refitted_fit']['covariance'], old['covariance'], rtol=1e-7)
+    if declared:
+        retained = np.flatnonzero(new['retained']).tolist()
+        assert new['refitted_fit']['correlation_blocks'] == [[retained.index(i) for i in blocks[0]]]
 
 def test_general_pdg_dependency_blocks_keep_the_exact_relation():
     block = np.array([[1., 0.], [0., 1.], [-1., 1.]])
@@ -91,7 +99,7 @@ def test_marginal_node_expectations_follow_full_correlated_projection():
     beta = np.linalg.solve(x.T@w@x, x.T@w@y)
     residual = y-x@beta
     expected_cov = corr-x@np.linalg.solve(x.T@w@x, x.T)
-    answer = node_scale_geometry(residual, -x, corr, ['a']*3+['ab']*3)
+    answer = node_scale_geometry(residual, -x, corr, ['a']*3+['ab']*3, group_correlated=False)
     np.testing.assert_allclose(answer['residual_covariance'], expected_cov, atol=1e-12)
     for group in answer['groups']:
         g = group['indices']
@@ -110,6 +118,55 @@ def test_one_correlated_node_recovers_generalized_birge():
     assert group['scale'] == pytest.approx(np.sqrt(20.))
 
 
+def test_cross_node_block_does_not_absorb_other_measurements_of_its_nodes():
+    # A1,A2,A3 measure X; B1,B2 measure Y. Only A2 and B1 are correlated.
+    x = np.array([[1., 0.]]*3 + [[0., 1.]]*2)
+    y = np.array([-3., 0., 3., 4., 12.])
+    corr = np.eye(5)
+    corr[1, 3] = corr[3, 1] = .4
+    precision = np.linalg.inv(corr)
+    covariance = np.linalg.inv(x.T @ precision @ x)
+    mean = covariance @ x.T @ precision @ y
+    residual = y - x @ mean
+    residual_covariance = corr - x @ covariance @ x.T
+    answer = node_scale_geometry(residual, -x, corr, ['X']*3 + ['Y']*2)
+    assert [g['indices'] for g in answer['groups']] == [[0, 2], [1, 3], [4]]
+    for group in answer['groups']:
+        indices = group['indices']
+        v = corr[np.ix_(indices, indices)]
+        observed = residual[indices] @ np.linalg.solve(v, residual[indices])
+        expected = np.trace(np.linalg.solve(v, residual_covariance[np.ix_(indices, indices)]))
+        assert group['observed'] == pytest.approx(observed)
+        assert group['expected'] == pytest.approx(expected)
+        assert group['scale'] == pytest.approx(max(1., np.sqrt(observed/expected)))
+    assert sum(g['observed'] for g in answer['groups']) == pytest.approx(answer['q'])
+    assert sum(g['expected'] for g in answer['groups']) == pytest.approx(3.)
+
+    fit = model_fit(y, np.ones(5), np.ones(5), corr,
+                    lambda p: jnp.asarray(x) @ p, mean, ['X']*3 + ['Y']*2)
+    result = fit_node_scales(fit)
+    scales = result['input_scales']
+    np.testing.assert_allclose(scales, answer['measurement_scales'])
+    assert scales[1] == scales[3]
+    scaled_v = corr * np.outer(scales, scales)
+    scaled_covariance = np.linalg.inv(x.T @ np.linalg.solve(scaled_v, x))
+    scaled_mean = scaled_covariance @ x.T @ np.linalg.solve(scaled_v, y)
+    np.testing.assert_allclose(result['param_values'], scaled_mean, atol=1e-8)
+    np.testing.assert_allclose(result['covariance'], scaled_covariance, atol=1e-8)
+    np.testing.assert_array_equal(result['corr_mat'], corr)
+
+    previous = fit_node_scales(fit, group_correlated=False)
+    assert [g['indices'] for g in previous['node_scaling']['groups']] == [[0, 1, 2], [3, 4]]
+    assert not np.allclose(previous['input_scales'], scales)
+
+
+def test_declared_identity_block_is_separate_even_within_one_node():
+    answer = node_scale_geometry([-1., 1., 3.], -np.ones((3, 1)), np.eye(3), ['X']*3,
+                                 correlated_blocks=[[0, 1]])
+    assert [g['indices'] for g in answer['groups']] == [[0, 1], [2]]
+    assert sum(g['expected'] for g in answer['groups']) == pytest.approx(2.)
+
+
 def test_local_geometry_is_invariant_to_parameter_units_and_row_order():
     x = np.repeat([[1., 0], [0, 1.], [1., 1.]], 2, axis=0)
     corr = .2*np.ones((6, 6))+.8*np.eye(6)
@@ -118,15 +175,14 @@ def test_local_geometry_is_invariant_to_parameter_units_and_row_order():
     order = [5, 3, 1, 4, 2, 0]
     first = node_scale_geometry(y, x, corr, nodes)
     second = node_scale_geometry(y[order], (x*[1e-12, 1e12])[order], corr[np.ix_(order, order)], nodes[order])
-    by_node = dict(zip(second['nodes'], second['scales']))
-    np.testing.assert_allclose(first['scales'], [by_node[n] for n in first['nodes']], atol=1e-12)
+    np.testing.assert_allclose(first['measurement_scales'][order], second['measurement_scales'], atol=1e-12)
 
 
 def test_saturated_node_is_flagged_without_an_invented_scale():
     answer = node_scale_geometry([0.], [[1.]], [[1.]], ['a'])
     assert answer['residual_df'] == 0
     assert not answer['groups'][0]['estimable']
-    assert answer['scales'][0] == 1
+    assert answer['measurement_scales'][0] == 1
 
 
 def test_dependent_nodes_share_one_scale_and_keep_raw_relation():
@@ -137,15 +193,23 @@ def test_dependent_nodes_share_one_scale_and_keep_raw_relation():
     corr = np.kron(np.eye(2), covariance/np.sqrt(np.outer(np.diag(covariance), np.diag(covariance))))
     fit = model_fit([1., 2., 1., 3., 5., 2.], np.tile(errors, 2), np.tile(errors, 2),
                     corr, lambda p: jnp.asarray(design)@p, [2., 3.5], ['a', 'b', 'difference']*2)
-    answer = fit_node_scales(fit)
+    answer = fit_node_scales(fit, group_correlated=False)
     geometry = answer['node_scaling']
     assert len(geometry['groups']) == 1
     assert geometry['residual_df'] == 2
     assert geometry['groups'][0]['expected'] == pytest.approx(2.)
-    assert geometry['scales'][0] > 2
-    np.testing.assert_allclose(geometry['scales'], geometry['scales'][0])
+    assert geometry['measurement_scales'][0] > 2
+    np.testing.assert_allclose(geometry['measurement_scales'], geometry['measurement_scales'][0])
     v = corr*np.outer(np.tile(errors, 2)*answer['input_scales'], np.tile(errors, 2)*answer['input_scales'])
     np.testing.assert_allclose(v[:3, :3]@np.array([1., -1., 1.]), 0, atol=1e-12)
+
+    separate = fit_node_scales(fit)
+    assert [g['indices'] for g in separate['node_scaling']['groups']] == [[0, 1, 2], [3, 4, 5]]
+    assert sum(g['expected'] for g in separate['node_scaling']['groups']) == pytest.approx(2.)
+    v = corr*np.outer(np.tile(errors, 2)*separate['input_scales'], np.tile(errors, 2)*separate['input_scales'])
+    for group in separate['node_scaling']['groups']:
+        indices = group['indices']
+        np.testing.assert_allclose(v[np.ix_(indices, indices)]@np.array([1., -1., 1.]), 0, atol=1e-12)
 
 
 def test_asymmetric_knot_is_explicit_and_uses_finite_local_geometry():
@@ -154,7 +218,7 @@ def test_asymmetric_knot_is_explicit_and_uses_finite_local_geometry():
     answer = fit_node_scales(fit)
     assert answer['node_scaling']['knot_rows'] == [1]
     assert answer['node_scaling']['groups'][0]['expected'] == pytest.approx(1.)
-    assert np.isfinite(answer['node_scaling']['scales']).all()
+    assert np.isfinite(answer['node_scaling']['measurement_scales']).all()
 
 
 def test_local_scales_retain_nonlinear_asymmetric_correlated_objective():
@@ -164,7 +228,7 @@ def test_local_scales_retain_nonlinear_asymmetric_correlated_objective():
     corr = np.eye(9); corr[0, 3] = corr[3, 0] = .35
     fit = model_fit(y, lower, 1.5*lower, corr, mean, [2., 3.], ['a']*3+['b']*3+['ab']*3)
     answer = fit_node_scales(fit)
-    assert answer['node_scaling']['scales'][2] > 3
+    assert min(answer['node_scaling']['measurement_scales'][6:]) > 3
     np.testing.assert_array_equal(answer['corr_mat'], corr)
     assert answer['chi2_min'] == pytest.approx(float(fit['chi2_open'](answer['fitted_values'], y, answer['input_scales'])))
     assert np.linalg.norm(jax.grad(answer['chi2'])(answer['fitted_values'])) < 1e-4
@@ -178,7 +242,7 @@ def test_boundary_geometry_conditions_on_the_active_face():
     assert abs(answer['param_values'][0]) < 1e-8
     assert answer['node_scaling']['active_bounds'] == [0]
     assert answer['node_scaling']['residual_df'] == 3
-    assert answer['node_scaling']['scales'][0] == pytest.approx(np.sqrt(1.75))
+    assert answer['node_scaling']['measurement_scales'][0] == pytest.approx(np.sqrt(1.75))
 
 
 def test_refit_handles_an_asymmetric_knot_on_a_physical_boundary():

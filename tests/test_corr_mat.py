@@ -5,7 +5,7 @@ import pytest
 import jax
 jax.config.update("jax_enable_x64", True)
 
-from pdgfits.corr_mat import get_corr_mat
+from pdgfits.corr_mat import get_corr_mat, correlation_blocks
 
 
 def make_meas_df(rows):
@@ -50,3 +50,29 @@ def test_output_dtype_float64():
     corr_df = make_corr_df([])
     mat = get_corr_mat(meas_df, corr_df)
     assert mat.dtype == jnp.float64
+
+
+def test_declared_groups_include_zero_links_and_transitive_connections():
+    data = make_meas_df([('X', 'r1', 1), ('X', 'r2', 1), ('Y', 'r3', 1),
+                         ('Y', 'r4', 1), ('Y', 'r4', 2)])
+    declared = make_corr_df([
+        ('X', 'r2', 1, 'Y', 'r3', 1, .4),
+        ('Y', 'r3', 1, 'Y', 'r4', 1, 0.),
+    ])
+    matrix, blocks = get_corr_mat(data, declared, return_blocks=True)
+    assert blocks == [[1, 2, 3]]
+    assert correlation_blocks(matrix) == [[1, 2]]
+    assert correlation_blocks(matrix, blocks) == blocks
+    assert matrix[2, 3] == 0
+    np.testing.assert_array_equal(matrix, get_corr_mat(data, declared))
+
+
+@pytest.mark.parametrize('blocks', [[[0, 1], [1, 2]], [[0]], [[-1, 1]], [[0, 4]], [[0, 0]]])
+def test_invalid_declared_blocks_raise(blocks):
+    with pytest.raises(ValueError):
+        correlation_blocks(np.eye(3), blocks)
+
+
+def test_declared_blocks_must_include_every_nonzero_correlation():
+    with pytest.raises(ValueError, match='Every nonzero correlation'):
+        correlation_blocks(np.array([[1., -.3], [-.3, 1.]]), [])
